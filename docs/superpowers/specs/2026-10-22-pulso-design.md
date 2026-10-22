@@ -63,7 +63,7 @@ Filosofía: *todo tu mundo gaming, en un solo lugar*. No sustituye a Steam: es u
           │                                                │     lanzamiento, rutas, opciones
           └──────────────► Supabase ◄──────────────────────┘
                            ├ Postgres + RLS  (datos y privacidad)
-                           ├ Auth            (Discord / Google / GitHub OAuth)
+                           ├ Auth            (sesiones; login con Steam vía Edge Function)
                            ├ Storage         (avatares y banners)
                            └ Edge Functions  (Steam OpenID, Steam Web API, IGDB, códigos de lista)
                                   │
@@ -81,7 +81,7 @@ Filosofía: *todo tu mundo gaming, en un solo lugar*. No sustituye a Steam: es u
 
 | Dato | Endpoint oficial | Condición |
 |---|---|---|
-| Vincular la cuenta | Steam OpenID 2.0 | Gratis y sin contraseña: Steam devuelve el SteamID64 |
+| Login | Steam OpenID 2.0 | Gratis y sin contraseña: Steam devuelve el SteamID64 |
 | Perfil público | `ISteamUser/GetPlayerSummaries` | — |
 | Juegos y horas | `IPlayerService/GetOwnedGames` | El perfil y los "detalles de juego" deben ser públicos |
 | Jugados recientemente | `IPlayerService/GetRecentlyPlayedGames` | Igual que el anterior |
@@ -89,7 +89,15 @@ Filosofía: *todo tu mundo gaming, en un solo lugar*. No sustituye a Steam: es u
 | Nombres e iconos de logros | `ISteamUserStats/GetSchemaForGame` | — |
 | % global de cada logro | `ISteamUserStats/GetGlobalAchievementPercentagesForApp` | — |
 
-- **Steam no es el método de login de Pulso.** Supabase Auth no lo admite, así que se entra con Discord, Google o GitHub y Steam se *vincula* después mediante OpenID, verificado en una Edge Function.
+- **Login con Steam (único método en el MVP).** Supabase Auth no trae Steam, así que el flujo es propio:
+  1. La app manda al usuario a `steamcommunity.com/openid/login` con `return_to` apuntando a la Edge Function `auth-steam`.
+  2. La función verifica la respuesta contra Steam (`openid.mode=check_authentication`) y extrae el SteamID64. Nunca se fía de lo que llega sin esa comprobación.
+  3. Busca o crea el usuario de Supabase con la API de administración, con un email sintético `<steamid64>@steam.pulso.invalid` que nunca recibe correos. Si es nuevo, también crea su `profile` y su `linked_accounts` de Steam.
+  4. Genera la sesión con `auth.admin.generateLink({ type: 'magiclink' })` + `verifyOtp({ token_hash })` en el propio servidor y devuelve los tokens a la app, que los guarda con `supabase.auth.setSession`.
+  5. **Web**: la función redirige a `/auth/callback` con los tokens en el fragmento (`#`), que no llega a ningún servidor. **Escritorio**: se abre el navegador del sistema y la función redirige a `pulso://auth/callback` (`tauri-plugin-deep-link`).
+  - Un parámetro `state` aleatorio, guardado por la app antes de salir, evita que alguien inyecte una sesión ajena.
+  - Ventaja añadida: cada usuario de Pulso tiene Steam vinculado desde el primer momento, sin un paso extra.
+  - Coste: añadir otro método de login más adelante (Epic, Discord…) supondrá enlazar identidades a mano. La tabla `linked_accounts` ya lo contempla.
 - Si un perfil es privado, la interfaz muestra "Tu perfil de Steam es privado" con los pasos para cambiarlo. No se muestra una biblioteca vacía como si lo fuera.
 - Límite de la API: 100.000 llamadas al día por clave. Se cachean los esquemas de logros por juego y se limita la frecuencia de sincronización por usuario.
 - Los logros internos de Pulso, si llegan a existir, se mostrarán siempre separados de los de Steam y marcados como tales.
@@ -134,9 +142,9 @@ Oscuro por defecto, con fondos grafito y negro y superficies diferenciadas por t
 
 ## 10. Fases
 
-1. **Fundamentos**: monorepo, sistema de diseño y logotipo, Supabase (esquema y RLS), login con OAuth, navegación, perfil básico y **esqueleto de Tauri ya desde aquí** (comparte frontend y así salen pronto los problemas de empaquetado). Workflow de releases como en tus otros repos.
+1. **Fundamentos**: monorepo, sistema de diseño y logotipo, Supabase (esquema y RLS), login con Steam, navegación, perfil básico y **esqueleto de Tauri ya desde aquí** (comparte frontend y así salen pronto los problemas de empaquetado). Workflow de releases como en tus otros repos.
 2. **Producto**: catálogo IGDB con caché, biblioteca real con estados, filtros y etiquetas, perfiles públicos con privacidad, amigos y listas con códigos.
-3. **Steam**: vinculación por OpenID, importación de juegos y horas, logros y sincronizaciones con su historial y sus errores.
+3. **Steam**: importación de juegos y horas, logros y sincronizaciones con su historial y sus errores.
 4. **Launcher**: detección, lanzamiento, carpetas, opciones por juego, configuración en la nube, bandeja, inicio automático, instaladores y actualizaciones.
 5. **Social**: actividad de amigos, comparativas y notificaciones.
 6. **Estabilización**: pruebas, seguridad, rendimiento, documentación y monitorización.
@@ -150,12 +158,13 @@ Oscuro por defecto, con fondos grafito y negro y superficies diferenciadas por t
 | Límite de 500 MB de Supabase | Caché bajo demanda del catálogo, imágenes en CDN externas y vigilancia del tamaño |
 | Supabase pausa los proyectos con 7 días sin actividad | Aceptable durante el desarrollo; con usuarios reales no ocurre |
 | SmartScreen avisa porque el instalador no está firmado | SignPath ofrece firma gratuita a proyectos open source; mientras tanto, se documenta el aviso |
-| Emails de Supabase limitados a unos pocos por hora | Login solo con OAuth en el MVP |
+| Emails de Supabase limitados a unos pocos por hora | Login solo con Steam: no se envía ningún correo |
+| El login con Steam es un flujo propio, no de Supabase | Pruebas de la verificación OpenID (respuestas falsificadas, `state` incorrecto, SteamID manipulado) antes de abrirlo |
 | WebKitGTK en Linux renderiza distinto | Probar en Linux desde la fase 1, gracias al esqueleto temprano |
 
 ## 12. Decisiones tomadas por mí (revísalas)
 
-- Login con Discord, Google y GitHub; Steam solo como cuenta vinculada.
+- **Login solo con Steam** (decidido por Ren0X1), mediante una Edge Function propia. El username de Pulso se propone a partir del nombre de Steam y el usuario puede cambiarlo.
 - Pulso se trata como **no comercial** mientras no digas lo contrario, por la licencia de IGDB.
 - Un código de lista crea una **copia**, no una lista compartida que se edite entre varios.
 - La sincronización con Steam es manual o al abrir el launcher, no periódica en el servidor.

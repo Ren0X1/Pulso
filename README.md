@@ -17,7 +17,8 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 | Language | TypeScript everywhere · Rust for the desktop core |
 | UI | React + Vite, one shared design system for web and desktop |
 | Desktop | [Tauri 2](https://tauri.app/) — small installers, low RAM, native file and process access |
-| Backend | [Supabase](https://supabase.com/) — Postgres, Auth (Discord / Google / GitHub), Storage, Edge Functions |
+| Backend | [Supabase](https://supabase.com/) — Postgres, Auth, Storage, Edge Functions |
+| Login | **Sign in through Steam** (OpenID 2.0, verified server-side) — no passwords, no emails |
 | Privacy | Postgres Row Level Security: private data never leaves the database, whatever the frontend does |
 | Game catalog | [IGDB](https://www.igdb.com/) — 300k+ games from the '70s to today, cached on demand |
 | Artwork | IGDB CDN · [SteamGridDB](https://www.steamgriddb.com/) |
@@ -76,9 +77,9 @@ API keys (Steam, IGDB) live only in Supabase Edge Functions — never in the app
 
 | Phase | Scope | State |
 |-------|-------|-------|
-| 1️⃣ Foundations | Monorepo, design system and logo, database and RLS, OAuth login, navigation, basic profile, Tauri shell | 🟡 Designing |
+| 1️⃣ Foundations | Monorepo, design system and logo, database and RLS, Steam login, navigation, basic profile, Tauri shell | 🟡 Designing |
 | 2️⃣ Product | Catalog, real library, public profiles, friends, shareable lists | ⚪ Pending |
-| 3️⃣ Steam | Account linking, game and playtime import, achievements | ⚪ Pending |
+| 3️⃣ Steam | Game and playtime import, achievements | ⚪ Pending |
 | 4️⃣ Launcher | Detection, launching, folders, launch options, cloud settings, installers | ⚪ Pending |
 | 5️⃣ Social | Friends' activity, comparisons, notifications | ⚪ Pending |
 | 6️⃣ Launch | Tests, security, performance, monitoring | ⚪ Pending |
