@@ -5,6 +5,7 @@ import type { Profile as ProfileRow } from '../lib/auth.tsx'
 import { useAuth } from '../lib/auth.tsx'
 import { supabase } from '../lib/supabase.ts'
 import { EmptyState } from './EmptyState.tsx'
+import { FriendButton } from './FriendButton.tsx'
 
 const joined = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' })
 
@@ -44,10 +45,12 @@ export function ProfilePage() {
           <p className="muted">En Pulso desde {joined.format(new Date(profile.created_at))}</p>
           {profile.bio ? <p className="profile-bio">{profile.bio}</p> : isMe && <p className="muted">Aún no has escrito tu bio.</p>}
         </div>
-        {isMe && (
+        {isMe ? (
           <Link className="p-button" data-variant="ghost" to="/ajustes">
             Editar perfil
           </Link>
+        ) : (
+          state.status === 'signed-in' && <FriendButton me={state.session.user.id} other={profile.id} />
         )}
       </section>
 

@@ -25,10 +25,3 @@ export function AchievementsPage() {
   )
 }
 
-export function FriendsPage() {
-  return (
-    <EmptyState title="Aún no tienes amigos en Pulso">
-      Buscar jugadores, enviar solicitudes y ver lo que juegan tus amigos llega en la Fase 2.
-    </EmptyState>
-  )
-}

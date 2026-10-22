@@ -1,7 +1,9 @@
-import { NavLink, Outlet, useMatches } from 'react-router'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation, useMatches } from 'react-router'
 import { Activity, House, Library, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Avatar, Logo, PulseMark } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
+import { countIncoming } from '../lib/friends.ts'
 
 interface NavItem {
   to: string
@@ -9,6 +11,8 @@ interface NavItem {
   icon: LucideIcon
   /** Aparece en la barra inferior del móvil. */
   phone?: boolean
+  /** Solo para colas que piden acción: solicitudes de amistad recibidas. */
+  count?: number
 }
 
 const MAIN: NavItem[] = [
@@ -29,6 +33,7 @@ function NavRow({ item }: { item: NavItem }) {
     <NavLink to={item.to} end={item.to === '/'} className="nav-row">
       <Icon size={16} strokeWidth={1.5} aria-hidden="true" />
       <span>{item.label}</span>
+      {item.count ? <span className="nav-count num" aria-label={`${item.count} pendientes`}>{item.count}</span> : null}
     </NavLink>
   )
 }
@@ -39,6 +44,13 @@ export function AppShell() {
   const matches = useMatches()
   const title = (matches.at(-1)?.handle as RouteHandle | undefined)?.title ?? 'Pulso'
   const profilePath = profile ? `/u/${profile.username}` : '/ajustes'
+  const me = state.status === 'signed-in' ? state.session.user.id : null
+  const location = useLocation()
+  const [incoming, setIncoming] = useState(0)
+
+  useEffect(() => {
+    if (me) void countIncoming(me).then(setIncoming)
+  }, [me, location.pathname])
 
   return (
     <div className="shell">
@@ -48,7 +60,7 @@ export function AppShell() {
         </NavLink>
         <nav className="sidebar-nav">
           {MAIN.map((item) => (
-            <NavRow key={item.to} item={item} />
+            <NavRow key={item.to} item={item.to === '/amigos' ? { ...item, count: incoming } : item} />
           ))}
           <p className="nav-group">Tú</p>
           <NavRow item={{ to: profilePath, label: 'Perfil', icon: UserRound }} />

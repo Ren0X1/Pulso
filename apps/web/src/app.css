@@ -389,3 +389,75 @@ a.p-button {
     gap: 16px;
   }
 }
+
+/* ───────── Amigos ───────── */
+
+.nav-count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-control);
+  background: var(--pill-neutral-bg);
+  color: var(--text);
+  font-size: var(--fs-small);
+  line-height: 20px;
+  text-align: center;
+}
+.count {
+  margin-left: 6px;
+  color: var(--faint);
+  font-weight: 500;
+}
+.friends-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--gap);
+  align-items: start;
+}
+.player-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  border-bottom: 1px solid var(--rule);
+}
+.player-row:last-child {
+  border-bottom: 0;
+}
+.player-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: var(--text);
+  font-weight: 500;
+  text-decoration: none;
+}
+.player-link:hover span {
+  text-decoration: underline;
+}
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.search-empty {
+  margin-top: 12px;
+}
+.panel .p-field + .player-list {
+  margin-top: 8px;
+}
+
+@media (max-width: 960px) {
+  .friends-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
