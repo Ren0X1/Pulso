@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useMatches } from 'react-router'
-import { Activity, House, Library, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
+import { Activity, House, Library, ListChecks, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Avatar, Logo, PulseMark } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import { countIncoming } from '../lib/friends.ts'
@@ -18,6 +18,7 @@ interface NavItem {
 const MAIN: NavItem[] = [
   { to: '/', label: 'Inicio', icon: House, phone: true },
   { to: '/biblioteca', label: 'Biblioteca', icon: Library, phone: true },
+  { to: '/listas', label: 'Listas', icon: ListChecks },
   { to: '/actividad', label: 'Actividad', icon: Activity },
   { to: '/logros', label: 'Logros', icon: Trophy, phone: true },
   { to: '/amigos', label: 'Amigos', icon: Users, phone: true },

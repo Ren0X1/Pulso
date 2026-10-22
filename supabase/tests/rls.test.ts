@@ -159,12 +159,24 @@ describe('lista de amigos de otro jugador', () => {
 })
 
 describe('funciones expuestas por la API', () => {
-  it('ninguna función SECURITY DEFINER vive en public (la API las publicaría como /rpc)', async () => {
+  // Las únicas expuestas a propósito como /rpc; cada una comprueba quién la llama.
+  const INTENTIONAL_RPC = ['create_share_code', 'redeem_share_code']
+
+  it('solo las funciones SECURITY DEFINER previstas viven en public (la API las publica como /rpc)', async () => {
     const { rows } = await t.db.query<{ proname: string }>(
       `select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.prosecdef order by 1`,
+    )
+    expect(rows.map((r) => r.proname)).toEqual(INTENTIONAL_RPC)
+  })
+
+  it('ninguna de ellas la puede ejecutar un visitante sin sesión', async () => {
+    const { rows } = await t.db.query<{ proname: string; anon: boolean }>(
+      `select p.proname, has_function_privilege('anon', p.oid, 'execute') as anon
+       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
        where n.nspname = 'public' and p.prosecdef`,
     )
-    expect(rows).toEqual([])
+    expect(rows.filter((r) => r.anon)).toEqual([])
   })
 
   it('las funciones de public fijan su search_path', async () => {

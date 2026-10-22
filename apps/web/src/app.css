@@ -851,3 +851,104 @@ a.p-button {
     grid-template-columns: 88px minmax(0, 1fr);
   }
 }
+
+/* ───────── Listas ───────── */
+
+.list-index {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list-card {
+  display: grid;
+  gap: 4px;
+  padding: var(--pad);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  transition: background var(--fast) var(--ease);
+}
+.list-card:hover {
+  background: var(--hover);
+}
+.list-name {
+  font-size: var(--fs-section);
+  font-weight: 600;
+}
+.list-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--gap);
+  align-items: start;
+}
+.list-layout > .stack:only-child {
+  grid-column: 1 / -1;
+}
+.list-head {
+  display: grid;
+  gap: 8px;
+}
+.list-title,
+.list-title-input {
+  font-size: var(--fs-kpi);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.list-title-input {
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+}
+.list-title-input:hover,
+.list-title-input:focus {
+  border-bottom-color: var(--control);
+  outline: none;
+}
+.list-head select {
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  color: var(--text);
+  font: inherit;
+}
+.share-help {
+  margin-bottom: 16px;
+}
+.code-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.code-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.share-code {
+  flex: 1;
+  min-width: 140px;
+  font-family: var(--font);
+  font-size: var(--fs-section);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 960px) {
+  .list-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

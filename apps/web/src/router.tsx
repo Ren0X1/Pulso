@@ -7,6 +7,8 @@ import { Login } from './pages/Login.tsx'
 import { ProfilePage } from './pages/Profile.tsx'
 import { FriendsPage } from './pages/Friends.tsx'
 import { LibraryPage } from './pages/Library.tsx'
+import { ListDetailPage } from './pages/ListDetail.tsx'
+import { ListsPage } from './pages/Lists.tsx'
 import { AchievementsPage, ActivityPage } from './pages/Sections.tsx'
 import { SettingsPage } from './pages/Settings.tsx'
 
@@ -30,6 +32,8 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Home />, handle: handle('Inicio') },
           { path: 'biblioteca', element: <LibraryPage />, handle: handle('Biblioteca') },
+          { path: 'listas', element: <ListsPage />, handle: handle('Listas') },
+          { path: 'listas/:id', element: <ListDetailPage />, handle: handle('Lista') },
           { path: 'actividad', element: <ActivityPage />, handle: handle('Actividad') },
           { path: 'logros', element: <AchievementsPage />, handle: handle('Logros') },
           { path: 'amigos', element: <FriendsPage />, handle: handle('Amigos') },
