@@ -1,0 +1,224 @@
+/* Pulso · sistema de diseño
+   Estilo "true-black flat": suelo negro puro, elevación solo por luminosidad, sin bordes ni sombras
+   en reposo. El único color es el lima del pulso, y va en los datos, nunca en botones, pestañas ni nav. */
+
+@import '@fontsource-variable/inter';
+
+:root {
+  color-scheme: dark;
+
+  --ground: #000000;
+  --surface: #111111;
+  --raised: #2a2a2a;
+  --hover: #1a1a1a;
+  --border: #1a1a1a;
+  --rule: #161616;
+  --control: #444444;
+
+  --text: #ffffff;
+  --nav: #bbbbbb;
+  --muted: #b4b4b4;
+  --faint: #949494;
+
+  --accent: #c6f24e;
+  --positive: #c6f24e;
+  --negative: #e5484d;
+  --warning: #e5a93b;
+
+  --pill-positive-bg: #222a10;
+  --pill-positive-ink: #c6f24e;
+  --pill-negative-bg: #2c1a20;
+  --pill-negative-ink: #e5566f;
+  --pill-warning-bg: #2b2414;
+  --pill-warning-ink: #e5a93b;
+  --pill-neutral-bg: #222222;
+  --pill-neutral-ink: #ffffff;
+
+  --radius-card: 20px;
+  --radius-panel: 12px;
+  --radius-cover: 6px;
+  --radius-control: 999px;
+
+  --sidebar-width: 220px;
+  --topbar-height: 64px;
+  --nav-row: 34px;
+  --control-height: 36px;
+  --gap: 14px;
+  --pad: 22px;
+  --gutter: 29px;
+
+  --font: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --fs-title: 20px;
+  --fs-section: 16px;
+  --fs-kpi: 24px;
+  --fs-body: 14px;
+  --fs-small: 12px;
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --fast: 120ms;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font: 400 var(--fs-body) / 20px var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent);
+  color: #000;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fast: 0ms;
+  }
+}
+
+/* ───────── Componentes ───────── */
+
+.p-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--control-height);
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font: 500 var(--fs-body) / 1 var(--font);
+  cursor: pointer;
+  transition:
+    background var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
+}
+.p-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.p-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.p-button[data-variant='primary'] {
+  background: var(--text);
+  color: #000;
+}
+.p-button[data-variant='primary']:hover:not(:disabled) {
+  background: #e6e6e6;
+}
+.p-button[data-variant='ghost'] {
+  background: transparent;
+  border-color: var(--control);
+  color: var(--text);
+}
+.p-button[data-variant='ghost']:hover:not(:disabled) {
+  background: var(--hover);
+}
+.p-button[data-variant='danger'] {
+  background: transparent;
+  border-color: var(--control);
+  color: var(--pill-negative-ink);
+}
+.p-button[data-variant='danger']:hover:not(:disabled) {
+  background: var(--pill-negative-bg);
+}
+
+.p-field {
+  display: grid;
+  gap: 8px;
+}
+.p-field label {
+  font-weight: 500;
+}
+.p-field input,
+.p-field textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid var(--control);
+  border-radius: 10px;
+  background: var(--ground);
+  color: var(--text);
+  font: inherit;
+}
+.p-field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.p-field input::placeholder,
+.p-field textarea::placeholder {
+  color: var(--faint);
+}
+.p-field [aria-invalid='true'] {
+  border-color: var(--negative);
+}
+.p-field .p-field-note {
+  color: var(--faint);
+  font-size: var(--fs-small);
+  line-height: 16px;
+}
+.p-field .p-field-note[data-error] {
+  color: var(--pill-negative-ink);
+}
+
+.p-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  background: var(--raised);
+  color: var(--text);
+  font-weight: 600;
+  object-fit: cover;
+  overflow: hidden;
+}
+
+.p-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.p-logo svg {
+  flex: none;
+}

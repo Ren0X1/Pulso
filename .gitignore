@@ -7,3 +7,5 @@ target/
 !.env.example
 *.log
 .DS_Store
+.taste-skill/
+.superpowers/
