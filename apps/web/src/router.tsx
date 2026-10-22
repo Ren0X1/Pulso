@@ -6,7 +6,8 @@ import { Home } from './pages/Home.tsx'
 import { Login } from './pages/Login.tsx'
 import { ProfilePage } from './pages/Profile.tsx'
 import { FriendsPage } from './pages/Friends.tsx'
-import { AchievementsPage, ActivityPage, LibraryPage } from './pages/Sections.tsx'
+import { LibraryPage } from './pages/Library.tsx'
+import { AchievementsPage, ActivityPage } from './pages/Sections.tsx'
 import { SettingsPage } from './pages/Settings.tsx'
 
 function RequireSession() {

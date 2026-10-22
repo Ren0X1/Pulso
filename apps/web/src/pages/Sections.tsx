@@ -1,14 +1,5 @@
 import { EmptyState } from './EmptyState.tsx'
 
-export function LibraryPage() {
-  return (
-    <EmptyState title="Tu biblioteca está vacía">
-      Llega en las Fases 2 y 3: podrás añadir cualquier juego del catálogo mundial y Pulso importará los de tu cuenta de
-      Steam, con sus horas y su estado.
-    </EmptyState>
-  )
-}
-
 export function ActivityPage() {
   return (
     <EmptyState title="Sin actividad todavía">
