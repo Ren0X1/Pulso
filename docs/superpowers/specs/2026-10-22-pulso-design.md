@@ -109,6 +109,12 @@ Filosofía: *todo tu mundo gaming, en un solo lugar*. No sustituye a Steam: es u
 - **Tres estados distintos** para cada juego: *lo tienes* (Steam lo dice), *está instalado* (detectado en el disco) y *Pulso puede lanzarlo*.
 - **Archivos**: abrir la carpeta de instalación y ver su tamaño en disco.
 - **Configuración en la nube**: las preferencias del launcher y las opciones por juego se guardan en Supabase (tabla `user_settings`), así que se recuperan en otro PC.
+- **Discord Rich Presence** (pedido por Ren0X1): mientras juegas, tu estado de Discord muestra *Jugando a <juego>* con la portada, el tiempo de sesión y un botón a tu perfil de Pulso. Sin juego abierto, muestra *En Pulso · Biblioteca* o la sección en la que estés.
+  - Funciona por la IPC local de Discord (crate de Rust `discord-rich-presence`), sin servidor ni coste. Hace falta una aplicación gratuita en el Discord Developer Portal cuyo *Client ID* (que no es secreto) va en la config del launcher.
+  - **Qué estás jugando**: lo sabe con seguridad si el juego se lanzó desde Pulso. Además, cada pocos segundos compara los procesos en ejecución con las carpetas de instalación detectadas, así que también sirve si lo abres desde Steam.
+  - La portada se pasa como URL externa (CDN de IGDB o de Steam), así que no hay que subir imágenes a Discord.
+  - Se puede desactivar o elegir qué se muestra (juego, tiempo, botón) desde Ajustes. Si Discord no está abierto, no pasa nada: reintenta en silencio.
+  - Lo mismo alimenta la **actividad** de Pulso: al cerrar el juego se registra la sesión (`activity_events`) para el historial y la actividad de amigos.
 - **Extras**: inicio automático opcional, bandeja del sistema y actualizaciones con `tauri-plugin-updater` desde GitHub Releases.
 
 ## 8. Modelo de datos inicial
@@ -145,7 +151,7 @@ Oscuro por defecto, con fondos grafito y negro y superficies diferenciadas por t
 1. **Fundamentos**: monorepo, sistema de diseño y logotipo, Supabase (esquema y RLS), login con Steam, navegación, perfil básico y **esqueleto de Tauri ya desde aquí** (comparte frontend y así salen pronto los problemas de empaquetado). Workflow de releases como en tus otros repos.
 2. **Producto**: catálogo IGDB con caché, biblioteca real con estados, filtros y etiquetas, perfiles públicos con privacidad, amigos y listas con códigos.
 3. **Steam**: importación de juegos y horas, logros y sincronizaciones con su historial y sus errores.
-4. **Launcher**: detección, lanzamiento, carpetas, opciones por juego, configuración en la nube, bandeja, inicio automático, instaladores y actualizaciones.
+4. **Launcher**: detección, lanzamiento, carpetas, opciones por juego, detección del juego en curso, Discord Rich Presence, configuración en la nube, bandeja, inicio automático, instaladores y actualizaciones.
 5. **Social**: actividad de amigos, comparativas y notificaciones.
 6. **Estabilización**: pruebas, seguridad, rendimiento, documentación y monitorización.
 

@@ -27,6 +27,7 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 | Monorepo | pnpm + Turborepo |
 | CI/CD | GitHub Actions — versioning, releases and desktop installers |
 | Updates | `tauri-plugin-updater` from GitHub Releases |
+| Discord | Rich Presence over Discord's local IPC (Rust) |
 
 ---
 
@@ -52,6 +53,7 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 - Detects installed Steam games on Windows and Linux.
 - Launches them through Steam (`steam://rungameid/…`), so login, DRM and updates stay with Steam.
 - Opens the install folder, shows the size on disk and keeps per-game launch options.
+- 🎧 **Discord Rich Presence**: your Discord status shows the game you are playing, its cover art, session time and a link to your Pulso profile — even when you launched it from Steam.
 - Settings synced to your account, tray icon, optional start with the system and auto-updates.
 
 ---
@@ -80,7 +82,7 @@ API keys (Steam, IGDB) live only in Supabase Edge Functions — never in the app
 | 1️⃣ Foundations | Monorepo, design system and logo, database and RLS, Steam login, navigation, basic profile, Tauri shell | 🟡 Designing |
 | 2️⃣ Product | Catalog, real library, public profiles, friends, shareable lists | ⚪ Pending |
 | 3️⃣ Steam | Game and playtime import, achievements | ⚪ Pending |
-| 4️⃣ Launcher | Detection, launching, folders, launch options, cloud settings, installers | ⚪ Pending |
+| 4️⃣ Launcher | Detection, launching, folders, launch options, now-playing detection, Discord Rich Presence, cloud settings, installers | ⚪ Pending |
 | 5️⃣ Social | Friends' activity, comparisons, notifications | ⚪ Pending |
 | 6️⃣ Launch | Tests, security, performance, monitoring | ⚪ Pending |
 
