@@ -952,3 +952,30 @@ a.p-button {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.panel-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.panel-title-row a {
+  color: var(--muted);
+}
+.notice-neutral {
+  background: var(--surface);
+  color: var(--text);
+}
+.notice a,
+.empty a,
+.panel .muted a {
+  color: var(--text);
+}
+.cover-grid-row {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+@media (max-width: 760px) {
+  .cover-grid-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

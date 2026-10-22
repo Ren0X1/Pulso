@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth.tsx'
 import { supabase } from '../lib/supabase.ts'
 import { EmptyState } from './EmptyState.tsx'
 import { FriendButton } from './FriendButton.tsx'
+import { ProfileShowcase } from './ProfileShowcase.tsx'
 
 const joined = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' })
 
@@ -54,10 +55,7 @@ export function ProfilePage() {
         )}
       </section>
 
-      <EmptyState title="Juegos favoritos y biblioteca">
-        Los favoritos, la biblioteca y los logros del perfil llegan en las Fases 2 y 3, y se mostrarán según la
-        privacidad que elija cada jugador.
-      </EmptyState>
+      <ProfileShowcase userId={profile.id} isMe={isMe} />
     </div>
   )
 }

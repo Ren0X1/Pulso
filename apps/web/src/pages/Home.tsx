@@ -3,7 +3,10 @@ import { ExternalLink } from 'lucide-react'
 import { Avatar } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import { supabase } from '../lib/supabase.ts'
-import { EmptyState } from './EmptyState.tsx'
+import { Link } from 'react-router'
+import { countIncoming } from '../lib/friends.ts'
+import { Cover } from './Cover.tsx'
+import type { CatalogGame } from '../lib/library.ts'
 
 interface SteamAccount {
   external_user_id: string
@@ -27,6 +30,8 @@ function SteamStatus({ account }: { account: SteamAccount }) {
 export function Home() {
   const { state } = useAuth()
   const [account, setAccount] = useState<SteamAccount | null | undefined>(undefined)
+  const [recent, setRecent] = useState<{ game_id: number; game: CatalogGame }[] | null>(null)
+  const [incoming, setIncoming] = useState(0)
 
   useEffect(() => {
     if (!supabase || state.status !== 'signed-in') return
@@ -36,7 +41,16 @@ export function Home() {
       .eq('platform', 'steam')
       .maybeSingle()
       .then(({ data }) => setAccount((data as SteamAccount | null) ?? null))
-  }, [state.status])
+    const me = state.session.user.id
+    void supabase
+      .from('user_games')
+      .select('game_id, game:games!inner(id, name, slug, summary, release_date, cover_url, genres, platforms)')
+      .eq('user_id', me)
+      .order('added_at', { ascending: false })
+      .limit(6)
+      .then(({ data }) => setRecent((data ?? []) as unknown as { game_id: number; game: CatalogGame }[]))
+    void countIncoming(me).then(setIncoming)
+  }, [state])
 
   const isPrivate = account?.profile_visibility === 'private'
 
@@ -84,9 +98,35 @@ export function Home() {
         )}
       </section>
 
-      <EmptyState title="Jugado recientemente">
-        Aquí verás a qué has jugado esta semana y cuántas horas, en cuanto Pulso importe tu biblioteca de Steam.
-      </EmptyState>
+      {incoming > 0 && (
+        <p className="notice notice-neutral">
+          Tienes {incoming} {incoming === 1 ? 'solicitud' : 'solicitudes'} de amistad. <Link to="/amigos">Responder</Link>
+        </p>
+      )}
+
+      <section className="panel" aria-label="Añadidos recientemente">
+        <div className="panel-title-row">
+          <h2 className="panel-title">Añadidos recientemente</h2>
+          <Link to="/biblioteca">Biblioteca</Link>
+        </div>
+        {recent === null ? (
+          <p className="muted">Cargando…</p>
+        ) : recent.length === 0 ? (
+          <p className="muted">
+            Aún no hay juegos en tu biblioteca. <Link to="/biblioteca">Añade el primero</Link>. Las horas y lo jugado esta semana
+            llegarán al importar Steam (Fase 3).
+          </p>
+        ) : (
+          <ul className="cover-grid cover-grid-row">
+            {recent.map((r) => (
+              <li key={r.game_id} className="cover-card">
+                <Cover game={r.game} />
+                <span className="cover-name">{r.game.name}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   )
 }

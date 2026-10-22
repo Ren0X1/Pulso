@@ -1,0 +1,89 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { PRIVACY_LABELS } from '@pulso/core'
+import { STATUS_LABELS, type LibraryEntry } from '../lib/library.ts'
+import type { GameList } from '../lib/lists.ts'
+import { supabase } from '../lib/supabase.ts'
+import { Cover } from './Cover.tsx'
+
+type Entry = Pick<LibraryEntry, 'game_id' | 'status' | 'favorite' | 'game'>
+
+/**
+ * Lo que este jugador deja ver de su biblioteca y sus listas. La base de datos aplica la privacidad:
+ * si no devuelve filas, puede ser porque no hay o porque no tienes permiso, y la pantalla lo dice así.
+ */
+export function ProfileShowcase({ userId, isMe }: { userId: string; isMe: boolean }) {
+  const [games, setGames] = useState<{ rows: Entry[]; total: number } | null>(null)
+  const [lists, setLists] = useState<GameList[]>([])
+
+  useEffect(() => {
+    void supabase!
+      .from('user_games')
+      .select('game_id, status, favorite, game:games!inner(id, name, slug, summary, release_date, cover_url, genres, platforms)', {
+        count: 'exact',
+      })
+      .eq('user_id', userId)
+      .order('favorite', { ascending: false })
+      .order('added_at', { ascending: false })
+      .limit(12)
+      .then(({ data, count }) => setGames({ rows: (data ?? []) as unknown as Entry[], total: count ?? 0 }))
+    void supabase!
+      .from('game_lists')
+      .select('id, owner_id, name, description, visibility, created_at, items:game_list_items(count)')
+      .eq('owner_id', userId)
+      .neq('visibility', 'private')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setLists((data ?? []) as GameList[]))
+  }, [userId])
+
+  if (!games) return null
+
+  return (
+    <>
+      <section className="panel" aria-label="Biblioteca">
+        <div className="panel-title-row">
+          <h2 className="panel-title">
+            Biblioteca <span className="count num">{games.total}</span>
+          </h2>
+          {isMe && games.total > 0 && <Link to="/biblioteca">Ver toda</Link>}
+        </div>
+        {games.rows.length === 0 ? (
+          <p className="muted">
+            {isMe ? 'Tu biblioteca está vacía. Añade juegos desde Biblioteca.' : 'No hay juegos que puedas ver: su biblioteca está vacía o es privada.'}
+          </p>
+        ) : (
+          <ul className="cover-grid">
+            {games.rows.map((e) => (
+              <li key={e.game_id} className="cover-card">
+                <Cover game={e.game} />
+                <span className="cover-name">{e.game.name}</span>
+                <span className="cover-meta">
+                  {STATUS_LABELS[e.status]}
+                  {e.favorite && ' · Favorito'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {lists.length > 0 && (
+        <section className="panel" aria-label="Listas">
+          <h2 className="panel-title">Listas</h2>
+          <ul className="player-list">
+            {lists.map((l) => (
+              <li key={l.id} className="player-row">
+                <Link to={`/listas/${l.id}`} className="player-link">
+                  {l.name}
+                </Link>
+                <span className="muted num">
+                  {l.items[0]?.count ?? 0} juegos · {PRIVACY_LABELS[l.visibility]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  )
+}
