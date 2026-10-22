@@ -1,0 +1,6 @@
+# Configuración de la CLI de Supabase (`npx supabase link` + `db push` + `functions deploy`).
+project_id = "pulso"
+
+# Steam vuelve aquí sin token de Supabase: la función valida el login por su cuenta.
+[functions.auth-steam]
+verify_jwt = false
