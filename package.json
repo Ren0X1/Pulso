@@ -2,7 +2,9 @@
   "name": "pulso",
   "private": true,
   "packageManager": "pnpm@11.25.0",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "turbo run dev --filter=web",
     "build": "turbo run build",
@@ -10,6 +12,7 @@
     "test": "turbo run test"
   },
   "devDependencies": {
+    "@types/node": "^24.19.2",
     "turbo": "2.11.10",
     "typescript": "7.0.2",
     "vitest": "5.0.5"

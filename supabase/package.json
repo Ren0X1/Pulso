@@ -1,0 +1,13 @@
+{
+  "name": "@pulso/supabase",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.11",
+    "@pulso/core": "workspace:*"
+  }
+}
