@@ -6,7 +6,7 @@
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { buildSteamLoginUrl, verifySteamAssertion } from '../_shared/steam-openid.ts'
 import { buildCallbackUrl, errorRedirect, finalRedirect, isLoginClient, isValidState } from '../_shared/redirect.ts'
-import { suggestUsername } from '../../../packages/core/src/username.ts'
+import { suggestUsername } from '../_shared/username.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!

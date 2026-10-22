@@ -18,7 +18,7 @@ Biblioteca, logros, horas, amigos y listas compartibles, sincronizado desde Stea
 |---|---|
 | `apps/web` | La app (React 19 + Vite 8 + React Router 8). La misma build sirve para la web y para el launcher |
 | `apps/desktop` | El launcher: solo `src-tauri/` (Tauri 2, Rust). Carga `apps/web` |
-| `packages/core` | Tipos, esquemas zod, cliente de Supabase, adaptadores de plataforma. `username.ts` no tiene dependencias porque también lo usa Deno |
+| `packages/core` | Tipos, esquemas zod, cliente de Supabase, adaptadores de plataforma. Reexporta `supabase/functions/_shared/username.ts` (la regla de usernames vive allí para que la Edge Function se despliegue sola) |
 | `packages/ui` | Sistema de diseño: `tokens.css` + componentes (`Button`, `Field`, `Avatar`, `Logo`) |
 | `supabase/migrations` | Esquema SQL y políticas RLS |
 | `supabase/functions` | Edge Functions (Deno). `_shared/` = lógica pura con tests en Vitest |
@@ -66,3 +66,10 @@ Clave de Steam Web API gratis: https://steamcommunity.com/dev/apikey
 `VERSION` + `CHANGELOG.md` con `MAJOR.FEATURE.MINOR.fFIX`. `.github/workflows/release.yml` publica la
 release en cada push a `main` (mismo workflow que RGL-Discord-BOT). `ci.yml` pasa tipos, tests y build en
 cada push.
+
+## Proyecto de Supabase
+
+- Ref `jaxxqwqyhptgbymlmmwr` · URL `https://jaxxqwqyhptgbymlmmwr.supabase.co` · MCP configurado en `.mcp.json`.
+- Migraciones aplicadas: `init`, `private_functions` (funciones auxiliares fuera de `public` para que la API no las publique como `/rpc`).
+- `auth-steam` desplegada sin JWT. Secretos en el panel (*Edge Functions → Secrets*): `STEAM_API_KEY`, `PULSO_APP_URL`.
+- Pendiente (Fase 2): los avisos de rendimiento del asesor (`auth.uid()` → `(select auth.uid())` en las políticas e índices en claves foráneas).

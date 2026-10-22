@@ -119,6 +119,25 @@ describe('perfiles y datos privados', () => {
   })
 })
 
+describe('funciones expuestas por la API', () => {
+  it('ninguna función SECURITY DEFINER vive en public (la API las publicaría como /rpc)', async () => {
+    const { rows } = await t.db.query<{ proname: string }>(
+      `select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.prosecdef`,
+    )
+    expect(rows).toEqual([])
+  })
+
+  it('las funciones de public fijan su search_path', async () => {
+    const { rows } = await t.db.query<{ proname: string }>(
+      `select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.prokind = 'f'
+         and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%')`,
+    )
+    expect(rows).toEqual([])
+  })
+})
+
 describe('catálogo y restricciones', () => {
   it('el catálogo es legible por todos pero solo lo escribe el servidor', async () => {
     expect(await t.as('anon', 'select name from public.games')).toEqual([{ name: 'Half-Life' }])
