@@ -4,3 +4,7 @@ project_id = "pulso"
 # Steam vuelve aquí sin token de Supabase: la función valida el login por su cuenta.
 [functions.auth-steam]
 verify_jwt = false
+
+# La función comprueba el usuario en su código; con verify_jwt la pasarela rechazaría el preflight CORS.
+[functions.catalog]
+verify_jwt = false

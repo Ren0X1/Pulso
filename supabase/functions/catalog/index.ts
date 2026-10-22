@@ -1,7 +1,8 @@
 // Edge Function: buscar en el catálogo mundial (IGDB).
 //   GET ?q=<texto> → { games: GameRow & { id } [] }
 // Lo encontrado se guarda en `games` (caché bajo demanda) para no depender de IGDB al volver a verlo.
-// Exige sesión de Pulso (verify_jwt) para no gastar el cupo de IGDB con peticiones anónimas.
+// Exige sesión de Pulso (comprobada en el código: verify_jwt rompería la petición previa de CORS)
+// para no gastar el cupo de IGDB con peticiones anónimas.
 
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { IGDB_GAMES_URL, buildSearchQuery, mapIgdbGame, normalizeTerm } from '../_shared/igdb.ts'
@@ -59,7 +60,7 @@ Deno.serve(async (req) => {
   if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) return json({ error: 'catalog_not_configured' }, 503)
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } })
-  // verify_jwt también deja pasar la clave anónima: aquí se exige un usuario real.
+  // Se exige un usuario real: la clave pública sola no basta.
   const jwt = req.headers.get('authorization')?.replace(/^Bearer /i, '') ?? ''
   const { data: auth } = await admin.auth.getUser(jwt)
   if (!auth.user) return json({ error: 'not_signed_in' }, 401)
