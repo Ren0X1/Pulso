@@ -119,6 +119,45 @@ describe('perfiles y datos privados', () => {
   })
 })
 
+describe('lista de amigos de otro jugador', () => {
+  const friendsOfA = (viewer: string) =>
+    t.as({ user: viewer }, 'select * from public.friendships where $1 in (requester_id, addressee_id)', [A])
+
+  beforeEach(async () => {
+    // A es amigo de B; C le ha mandado una solicitud a A.
+    await t.db.query(`insert into public.friendships (requester_id, addressee_id, status) values ($1, $2, 'accepted')`, [A, B])
+    await t.db.query(`insert into public.friendships (requester_id, addressee_id, status) values ($1, $2, 'pending')`, [C, A])
+  })
+
+  const setFriends = (level: string) =>
+    t.db.query('update public.privacy_settings set friends = $1 where user_id = $2', [level, A])
+
+  it('pública: cualquiera ve sus amistades aceptadas, nunca las solicitudes pendientes', async () => {
+    await setFriends('public')
+    await t.db.query(`update public.privacy_settings set friends = 'private' where user_id = $1`, [B])
+    const D = '00000000-0000-0000-0000-00000000000d'
+    await t.createUser(D, 'delta')
+    const rows = await friendsOfA(D)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ status: 'accepted' })
+    expect(await t.as('anon', 'select * from public.friendships')).toHaveLength(1)
+  })
+
+  it('privada: un tercero no ve nada', async () => {
+    await setFriends('private')
+    await t.db.query(`update public.privacy_settings set friends = 'private' where user_id = $1`, [B])
+    const D = '00000000-0000-0000-0000-00000000000d'
+    await t.createUser(D, 'delta')
+    expect(await friendsOfA(D)).toHaveLength(0)
+  })
+
+  it('sus propias solicitudes las sigue viendo cada parte', async () => {
+    await setFriends('private')
+    expect(await friendsOfA(C)).toHaveLength(1)
+    expect(await friendsOfA(A)).toHaveLength(2)
+  })
+})
+
 describe('funciones expuestas por la API', () => {
   it('ninguna función SECURITY DEFINER vive en public (la API las publicaría como /rpc)', async () => {
     const { rows } = await t.db.query<{ proname: string }>(
