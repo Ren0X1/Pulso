@@ -1,0 +1,30 @@
+[package]
+name = "pulso"
+version = "0.1.0"
+description = "Pulso: tu mundo gaming en un solo lugar"
+authors = ["Ren0X1"]
+license = "MIT"
+edition = "2021"
+
+[lib]
+name = "pulso_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.5", features = [] }
+tauri-plugin-deep-link = "2.6.2"
+tauri-plugin-opener = "2.7.2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+
+[target."cfg(any(windows, target_os = \"linux\", target_os = \"macos\"))".dependencies]
+tauri-plugin-single-instance = { version = "2.5.4", features = ["deep-link"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

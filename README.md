@@ -6,7 +6,7 @@
 
 Pulso does not replace Steam — it sits on top of it. The launcher finds your installed games, starts them through Steam, opens their folders and keeps your settings in the cloud; the web lets you show off your profile, compare achievements with friends and share backlog lists with a single code. Everything runs on free tiers. 💸
 
-> 🚧 **Status: early development.** Nothing below is usable yet — this README describes what is being built. Progress is tracked in [`CHANGELOG.md`](CHANGELOG.md) once the first version ships.
+> 🚧 **Status: phase 1 of 6.** Sign in through Steam, your profile, privacy settings and the navigation work on the web and in the desktop shell. Library, achievements, friends and launching games are still to come — the app says so on each screen instead of showing made-up data. See the [roadmap](#️-roadmap) and [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -79,7 +79,7 @@ API keys (Steam, IGDB) live only in Supabase Edge Functions — never in the app
 
 | Phase | Scope | State |
 |-------|-------|-------|
-| 1️⃣ Foundations | Monorepo, design system and logo, database and RLS, Steam login, navigation, basic profile, Tauri shell | 🟡 Designing |
+| 1️⃣ Foundations | Monorepo, design system and logo, database and RLS, Steam login, navigation, basic profile, Tauri shell | 🟢 Done |
 | 2️⃣ Product | Catalog, real library, public profiles, friends, shareable lists | ⚪ Pending |
 | 3️⃣ Steam | Game and playtime import, achievements | ⚪ Pending |
 | 4️⃣ Launcher | Detection, launching, folders, launch options, now-playing detection, Discord Rich Presence, cloud settings, installers | ⚪ Pending |
@@ -106,7 +106,53 @@ Pulso/
 └── docs/                 # design and decisions
 ```
 
-*(Planned — folders appear as each phase lands.)*
+---
+
+## 🚀 Run it yourself
+
+Everything below is free. You need **Node 22+**, **pnpm 11** and, for the desktop app, **Rust** plus the **MSVC C++ Build Tools** on Windows (WebKitGTK on Linux).
+
+### 1️⃣ Install
+
+```bash
+git clone https://github.com/Ren0X1/Pulso.git && cd Pulso
+pnpm install
+```
+
+### 2️⃣ Create the backend (Supabase free plan)
+
+```bash
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push                                   # schema + Row Level Security
+cp supabase/.env.example supabase/.env                 # add your free Steam Web API key
+npx supabase secrets set --env-file supabase/.env
+npx supabase functions deploy auth-steam
+```
+
+Get a Steam Web API key at [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey).
+
+### 3️⃣ Start the web app
+
+```bash
+cp apps/web/.env.example apps/web/.env                 # your project URL + public anon key
+pnpm dev                                               # http://localhost:5173
+```
+
+### 4️⃣ Start the desktop launcher
+
+```bash
+pnpm --filter desktop dev                              # hot reload
+pnpm --filter desktop tauri build                      # installer: NSIS on Windows, deb/AppImage on Linux
+```
+
+### 🧪 Checks
+
+```bash
+pnpm test        # unit tests + RLS tests on an in-memory Postgres (PGlite, no Docker)
+pnpm typecheck
+pnpm build
+```
 
 ---
 
