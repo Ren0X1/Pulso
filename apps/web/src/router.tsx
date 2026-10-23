@@ -40,6 +40,7 @@ export const router = createBrowserRouter([
               { path: 'listas/:id', ...page('Lista', async () => (await import('./pages/ListDetail.tsx')).ListDetailPage) },
               { path: 'actividad', ...page('Actividad', async () => (await import('./pages/Activity.tsx')).ActivityPage) },
               { path: 'logros', ...page('Logros', async () => (await import('./pages/Achievements.tsx')).AchievementsPage) },
+              { path: 'estadisticas', ...page('Estadísticas', async () => (await import('./pages/Stats.tsx')).StatsPage) },
               { path: 'amigos', ...page('Amigos', async () => (await import('./pages/Friends.tsx')).FriendsPage) },
               { path: 'u/:username', ...page('Perfil', async () => (await import('./pages/Profile.tsx')).ProfilePage) },
               { path: 'u/:username/comparar', ...page('Comparar', async () => (await import('./pages/Compare.tsx')).ComparePage) },

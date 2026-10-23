@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useMatches } from 'react-router'
-import { Activity, Bell, House, Library, ListChecks, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
+import { Activity, Bell, ChartColumn, House, Library, ListChecks, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Avatar, Logo, PulseMark } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import { countIncoming } from '../lib/friends.ts'
@@ -29,6 +29,7 @@ const MAIN: NavItem[] = [
   { to: '/listas', label: 'Listas', icon: ListChecks },
   { to: '/actividad', label: 'Actividad', icon: Activity },
   { to: '/logros', label: 'Logros', icon: Trophy, phone: true },
+  { to: '/estadisticas', label: 'Estadísticas', icon: ChartColumn },
   { to: '/amigos', label: 'Amigos', icon: Users, phone: true },
 ]
 

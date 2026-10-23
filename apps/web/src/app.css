@@ -1467,3 +1467,116 @@ a.link-chip:hover {
     align-items: flex-start;
   }
 }
+
+/* ───────── Estadísticas ─────────
+   Un solo color de datos (el lima) en las marcas; etiquetas y valores en tinta; rejilla discreta. */
+
+.kpis-6 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.kpi-sub {
+  color: var(--faint);
+  font-size: var(--fs-body);
+  font-weight: 500;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--gap);
+  align-items: start;
+}
+.chart {
+  margin: 0;
+}
+.barlist {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.barlist li {
+  display: grid;
+  grid-template-columns: minmax(96px, 34%) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 30px;
+  border-radius: 6px;
+}
+.barlist li:hover {
+  background: var(--hover);
+}
+.barlist-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.barlist-track {
+  height: 10px;
+}
+.barlist-bar {
+  display: block;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent);
+}
+.barlist-value {
+  min-width: 72px;
+  text-align: right;
+}
+.chart-plot {
+  position: relative;
+}
+.chart-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.chart-grid {
+  stroke: #222;
+  stroke-width: 1;
+}
+.chart-axis {
+  stroke: #3a3a3a;
+  stroke-width: 1;
+}
+.chart-tick {
+  fill: var(--faint);
+  font-size: 11px;
+  font-family: var(--font);
+}
+.chart-bar {
+  fill: var(--accent);
+  transition: opacity var(--fast) var(--ease);
+}
+.chart-bar[data-dim] {
+  opacity: 0.35;
+}
+.chart-tip {
+  position: absolute;
+  top: 0;
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.5);
+  font-size: var(--fs-small);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+@media (max-width: 960px) {
+  .stats-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .kpis-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .kpis-6 > div {
+    padding: 0;
+    border-left: 0;
+  }
+}

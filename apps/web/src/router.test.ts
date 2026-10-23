@@ -13,7 +13,7 @@ function lazyRoutes(routes: RouteObject[], out: RouteObject[] = []): RouteObject
 describe('rutas con carga diferida', () => {
   it('cada pantalla se descarga y trae su componente', async () => {
     const routes = lazyRoutes(router.routes as RouteObject[])
-    expect(routes.length).toBe(11)
+    expect(routes.length).toBe(12)
     for (const route of routes) {
       const loaded = await (route.lazy as () => Promise<{ Component?: unknown }>)()
       expect(typeof loaded.Component, route.path ?? 'inicio').toBe('function')
