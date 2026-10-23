@@ -61,6 +61,16 @@ Clave de Steam Web API gratis: https://steamcommunity.com/dev/apikey
 - Diseño *true-black flat*: suelo `#000`, elevación por luminosidad, sin bordes ni sombras en reposo. El lima `--accent` solo en datos, nunca en botones, pestañas ni nav. Botón principal = blanco invertido.
 - Interfaz en español; README en inglés; commits `tipo(ámbito): texto en español`.
 
+## Launcher (apps/desktop)
+
+- `src-tauri/src/steam.rs` lee los juegos instalados (`libraryfolders.vdf` + `appmanifest_*.acf`); `playing.rs` detecta el juego abierto (variable `SteamAppId` del proceso o, si no, su carpeta); `presence.rs` es Discord Rich Presence (Application ID `1563105754452328469`); `launch.rs` lanza con parámetros (`steam -applaunch`, sin consola).
+- Comandos: `installed_games`, `now_playing`, `launch_game { appid, args? }`, `install_game`, `open_game_folder`, `set_presence`. Evento `now-playing`.
+- Cerrar la ventana deja Pulso en la bandeja. Inicio con el sistema con `--minimized`.
+- Ajustes del launcher en `user_settings.launcher`: `{ discordPresence, launchOptions: { "<appid>": "<parámetros>" } }`.
+- **Probar sin molestar al usuario**: `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333 pnpm --filter desktop dev` y manejar la ventana por CDP; minimizarla después. El usuario usa el PC mientras tanto.
+- **Actualizaciones**: `tauri-plugin-updater` lee `latest.json` de la última GitHub Release. Las versiones se firman con `~/.tauri/pulso.key` (sin contraseña; nunca al repo). En CI va en el secreto `TAURI_SIGNING_PRIVATE_KEY`. Para compilar el instalador en local: `TAURI_SIGNING_PRIVATE_KEY=$(cat ~/.tauri/pulso.key) pnpm --filter desktop tauri build --bundles nsis`.
+- Versión del instalador: `MAJOR.FEATURE.MINOR.fFIX` → semver `MAJOR.FEATURE.(MINOR×100+FIX)`, la calcula `release.yml`.
+
 ## Versionado
 
 `VERSION` + `CHANGELOG.md` con `MAJOR.FEATURE.MINOR.fFIX`. `.github/workflows/release.yml` publica la

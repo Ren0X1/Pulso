@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth.tsx'
 import { countIncoming } from '../lib/friends.ts'
 import { isDesktop } from '../lib/platform.ts'
 import { NowPlaying } from './NowPlaying.tsx'
+import { UpdateBanner } from './UpdateBanner.tsx'
 
 const desktop = isDesktop()
 
@@ -95,6 +96,7 @@ export function AppShell() {
       </header>
 
       <main className="canvas">
+        {desktop && <UpdateBanner />}
         <Outlet />
       </main>
 

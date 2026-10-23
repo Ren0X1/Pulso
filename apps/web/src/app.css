@@ -1288,3 +1288,13 @@ a.p-button {
 .dialog:focus {
   outline: none;
 }
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: var(--gap);
+  padding: 12px 12px 12px 20px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}

@@ -35,6 +35,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.new }}
     if: ${{ github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(release)') }}
     steps:
       - name: 📥 Checkout
@@ -153,3 +155,75 @@ jobs:
           name: Pulso v${{ steps.ver.outputs.new }}
           target_commitish: main
           body_path: NOTAS.md
+
+  # Instaladores del launcher, firmados para el actualizador automático, subidos a la misma release.
+  desktop:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundles: nsis
+          - os: ubuntu-22.04
+            bundles: deb,appimage
+    runs-on: ${{ matrix.os }}
+    env:
+      # Valores públicos (la clave publishable no es secreta).
+      VITE_SUPABASE_URL: https://jaxxqwqyhptgbymlmmwr.supabase.co
+      VITE_SUPABASE_ANON_KEY: sb_publishable_h23dg0PzLyn3kSBpHPb3Sg_TgvLS863
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.release.outputs.version }}
+
+      - name: 🐧 Dependencias de Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: 📦 pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 🟢 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: 🦀 Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 💾 Caché de Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: 📚 Dependencias
+        run: pnpm install --frozen-lockfile
+
+      # MAJOR.FEATURE.MINOR.fFIX no es semver; el actualizador necesita semver y que crezca siempre:
+      # 1.2.3.f4 → 1.2.304 (MINOR × 100 + FIX).
+      - name: 🔢 Versión del instalador
+        shell: bash
+        run: |
+          V="${{ needs.release.outputs.version }}"
+          IFS=. read -r MA FE MI FX <<< "$V"; FX="${FX#f}"
+          SEMVER="$MA.$FE.$((MI * 100 + FX))"
+          node -e "const f='apps/desktop/src-tauri/tauri.conf.json';const c=require('./'+f);c.version='$SEMVER';require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          echo "Instalador $SEMVER (release v$V)"
+
+      - name: 🏗️ Compilar y subir a la release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop
+          tagName: v${{ needs.release.outputs.version }}
+          releaseName: Pulso v${{ needs.release.outputs.version }}
+          args: --bundles ${{ matrix.bundles }}
+          includeUpdaterJson: true

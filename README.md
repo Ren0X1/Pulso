@@ -82,7 +82,7 @@ API keys (Steam, IGDB) live only in Supabase Edge Functions — never in the app
 | 1️⃣ Foundations | Monorepo, design system and logo, database and RLS, Steam login, navigation, basic profile, Tauri shell | 🟢 Done |
 | 2️⃣ Product | Catalog, real library, public profiles, friends, shareable lists | 🟢 Done |
 | 3️⃣ Steam | Game and playtime import, achievements | 🟢 Done |
-| 4️⃣ Launcher | Detection, launching, folders, launch options, now-playing detection, Discord Rich Presence, cloud settings, installers | ⚪ Pending |
+| 4️⃣ Launcher | Detection, launching, folders, launch options, now-playing detection, Discord Rich Presence, cloud settings, installers, auto-update | 🟢 Done |
 | 5️⃣ Social | Friends' activity, comparisons, notifications | ⚪ Pending |
 | 6️⃣ Launch | Tests, security, performance, monitoring | ⚪ Pending |
 
