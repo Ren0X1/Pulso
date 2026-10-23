@@ -89,7 +89,7 @@ API keys (Steam, IGDB) live only in Supabase Edge Functions — never in the app
 | 3️⃣ Steam | Game and playtime import, achievements | 🟢 Done |
 | 4️⃣ Launcher | Detection, launching, folders, launch options, now-playing detection, Discord Rich Presence, cloud settings, installers, auto-update | 🟢 Done |
 | 5️⃣ Social | Friends' activity, comparisons, notifications | 🟢 Done |
-| 6️⃣ Launch | Tests, security, performance, monitoring | ⚪ Pending |
+| 6️⃣ Launch | Tests, security, performance, installers ✅ · public web hosting and error monitoring ⏳ | 🟡 In progress |
 
 The full design lives in [`docs/superpowers/specs/2026-10-22-pulso-design.md`](docs/superpowers/specs/2026-10-22-pulso-design.md).
 

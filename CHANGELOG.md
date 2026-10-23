@@ -34,6 +34,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/).
 - 🧷 Se queda en la bandeja al cerrar la ventana y puede **iniciarse con Windows**, minimizado.
 - ⬆️ **Se actualiza solo** desde las releases de GitHub (versiones firmadas). Instalador NSIS de 2 MB.
 
+### ⚡ Rendimiento y estabilidad
+- Cada pantalla se descarga al visitarla: al abrir Pulso se cargan 164 KB comprimidos en vez de 204 KB.
+- Si una pantalla falla, sale un mensaje con "Recargar" y "Volver al inicio" en vez de una página en blanco.
+- Instaladores de Windows (`.exe`) y Linux (`.deb`, `.AppImage`) firmados en cada release.
+
 ### 🔒 Seguridad
 - Las funciones auxiliares de privacidad salen de la API pública (`are_friends` dejaba averiguar amistades ajenas).
 - Políticas RLS optimizadas y amistades visibles según la privacidad de la lista de amigos.
