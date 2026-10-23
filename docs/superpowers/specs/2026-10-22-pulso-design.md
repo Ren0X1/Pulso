@@ -172,7 +172,8 @@ Oscuro por defecto, con fondos grafito y negro y superficies diferenciadas por t
 
 - **Login solo con Steam** (decidido por Ren0X1), mediante una Edge Function propia. El username de Pulso se propone a partir del nombre de Steam y el usuario puede cambiarlo.
 - Pulso se trata como **no comercial** mientras no digas lo contrario, por la licencia de IGDB.
-- Un código de lista crea una **copia**, no una lista compartida que se edite entre varios.
+- Un código de lista crea una **copia**. Además (pedido por Ren0X1, 2026-10-23) el dueño puede invitar a **amigos** a la misma lista como lectores o editores (`game_list_members`); los editores solo cambian los juegos.
+- **Platino** (pedido por Ren0X1, 2026-10-23): un juego con todos sus logros de Steam. Se muestra en el perfil (contador junto al nombre y vitrina), en las portadas, en la lista y en el detalle.
 - La sincronización con Steam es manual o al abrir el launcher, no periódica en el servidor.
 - Dominio inicial `pulso.pages.dev` (o el que esté libre).
 

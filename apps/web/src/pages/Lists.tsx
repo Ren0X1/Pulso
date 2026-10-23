@@ -3,7 +3,16 @@ import { Link, useNavigate } from 'react-router'
 import { PRIVACY_LABELS } from '@pulso/core'
 import { Button, Field } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
-import { createList, loadLists, redeemCode, REDEEM_ERRORS, type GameList } from '../lib/lists.ts'
+import {
+  createList,
+  loadLists,
+  loadSharedWithMe,
+  redeemCode,
+  REDEEM_ERRORS,
+  ROLE_LABELS,
+  type GameList,
+  type SharedList,
+} from '../lib/lists.ts'
 import { Dialog } from './Dialog.tsx'
 
 export function ListsPage() {
@@ -19,9 +28,12 @@ export function ListsPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  const [shared, setShared] = useState<SharedList[]>([])
+
   const reload = useCallback(async () => {
     try {
       setLists(await loadLists(me))
+      setShared(await loadSharedWithMe(me))
     } catch {
       setFailed(true)
     }
@@ -95,6 +107,24 @@ export function ListsPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {shared.length > 0 && (
+        <section aria-label="Compartidas contigo" className="stack">
+          <h2 className="section-title">Compartidas contigo</h2>
+          <ul className="list-index">
+            {shared.map(({ list, role }) => (
+              <li key={list.id}>
+                <Link to={`/listas/${list.id}`} className="list-card">
+                  <span className="list-name">{list.name}</span>
+                  <span className="muted num">
+                    de {list.owner.username} · {list.items[0]?.count ?? 0} juegos · {ROLE_LABELS[role].toLowerCase()}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <Dialog open={creating} title="Nueva lista" onClose={() => setCreating(false)}>

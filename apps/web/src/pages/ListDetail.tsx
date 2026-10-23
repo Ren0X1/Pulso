@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { PRIVACY_LABELS, type PrivacyLevel } from '@pulso/core'
 import { Button } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
@@ -12,13 +12,19 @@ import {
   loadCodes,
   loadList,
   loadListItems,
+  myRole,
   removeFromList,
+  removeMember,
   revokeCode,
+  ROLE_LABELS,
   updateList,
   type GameList,
   type ListItem,
+  type ListRole,
   type ShareCode,
 } from '../lib/lists.ts'
+import { supabase } from '../lib/supabase.ts'
+import { ListMembers } from './ListMembers.tsx'
 import { Cover } from './Cover.tsx'
 import { Dialog } from './Dialog.tsx'
 import { EmptyState } from './EmptyState.tsx'
@@ -179,6 +185,8 @@ export function ListDetailPage() {
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [role, setRole] = useState<ListRole | null>(null)
+  const [owner, setOwner] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
     const found = await loadList(id)
@@ -186,8 +194,13 @@ export function ListDetailPage() {
     if (found) {
       setName(found.name)
       setItems(await loadListItems(id))
+      if (found.owner_id !== me) {
+        setRole(await myRole(id, me))
+        const { data } = await supabase!.from('profiles').select('username').eq('id', found.owner_id).maybeSingle()
+        setOwner((data as { username: string } | null)?.username ?? null)
+      }
     }
-  }, [id])
+  }, [id, me])
 
   useEffect(() => {
     void reload()
@@ -197,6 +210,7 @@ export function ListDetailPage() {
   if (list === null) return <EmptyState title="Lista no encontrada">No existe o no tienes permiso para verla.</EmptyState>
 
   const mine = list.owner_id === me
+  const canEdit = mine || role === 'editor'
 
   async function save(patch: Parameters<typeof updateList>[1]) {
     try {
@@ -226,7 +240,26 @@ export function ListDetailPage() {
           )}
           <p className="muted num">
             {items.length} {items.length === 1 ? 'juego' : 'juegos'}
+            {!mine && owner && (
+              <>
+                {' · de '}
+                <Link to={`/u/${owner}`}>{owner}</Link>
+                {role && ` · ${ROLE_LABELS[role].toLowerCase()}`}
+              </>
+            )}
           </p>
+          {!mine && canEdit && (
+            <div className="row-actions">
+              <Button onClick={() => setAdding(true)}>Añadir juego</Button>
+            </div>
+          )}
+          {!mine && role && (
+            <div className="row-actions">
+              <Button variant="ghost" onClick={() => void removeMember(id, me).then(() => navigate('/listas'))}>
+                Salir de la lista
+              </Button>
+            </div>
+          )}
           {mine && (
             <div className="row-actions">
               <select
@@ -249,7 +282,7 @@ export function ListDetailPage() {
         {items.length === 0 ? (
           <section className="empty">
             <h2>La lista está vacía</h2>
-            <p>{mine ? 'Añade juegos de tu biblioteca o del catálogo mundial.' : 'Su dueño aún no ha añadido juegos.'}</p>
+            <p>{canEdit ? 'Añade juegos de tu biblioteca o del catálogo mundial.' : 'Aún no tiene juegos.'}</p>
           </section>
         ) : (
           <ul className="cover-grid">
@@ -257,7 +290,7 @@ export function ListDetailPage() {
               <li key={item.game_id} className="cover-card">
                 <Cover game={item.game} />
                 <span className="cover-name">{item.game.name}</span>
-                {mine && (
+                {canEdit && (
                   <button type="button" className="link-button cover-meta" onClick={() => void removeFromList(id, item.game_id).then(reload)}>
                     Quitar
                   </button>
@@ -270,6 +303,7 @@ export function ListDetailPage() {
 
       {mine && (
         <div className="stack">
+          <ListMembers listId={id} me={me} />
           <SharePanel listId={id} />
           <section className="panel">
             {confirmDelete ? (
@@ -290,7 +324,7 @@ export function ListDetailPage() {
         </div>
       )}
 
-      {mine && (
+      {canEdit && (
         <AddToListDialog
           open={adding}
           userId={me}

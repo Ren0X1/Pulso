@@ -18,6 +18,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/).
 - 👥 **Amigos**: buscar jugadores, solicitudes, lista de amigos y botón de amistad en los perfiles.
 - 🔗 **Listas compartibles**: genera un código `XXXX-XXXX-XX`; quien lo carga recibe una copia privada. Revocables.
 - 👤 Perfil con biblioteca y listas según la privacidad de cada uno; Inicio con tus últimos juegos y solicitudes pendientes.
+- 🏆 **Platinos**: los juegos con todos sus logros de Steam llevan insignia en la portada, en la lista y en el detalle, y el perfil muestra cuántos tienes junto a tu nombre y una vitrina con todos.
+- 🤝 **Listas compartidas**: invita a tus amigos a una lista como lectores o editores; los editores añaden y quitan juegos de la misma lista. Aparecen en *Compartidas contigo* y cualquiera puede salirse.
 
 ### 🔒 Seguridad
 - Las funciones auxiliares de privacidad salen de la API pública (`are_friends` dejaba averiguar amistades ajenas).

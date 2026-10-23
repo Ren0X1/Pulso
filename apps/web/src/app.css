@@ -1179,3 +1179,43 @@ a.p-button {
 .platinum-note {
   margin: -8px 0 16px;
 }
+
+/* ───────── Listas compartidas ───────── */
+
+.section-title {
+  margin-top: 8px;
+  font-size: var(--fs-section);
+  font-weight: 600;
+}
+.members select,
+.invite-row select {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  color: var(--text);
+  font: inherit;
+}
+.members {
+  margin-bottom: 12px;
+}
+.invite-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.invite-row select:first-child {
+  flex: 1;
+  min-width: 140px;
+}
+.list-layout {
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+.members .player-row {
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+.members .row-actions {
+  margin-left: auto;
+}

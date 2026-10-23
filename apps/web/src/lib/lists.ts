@@ -117,3 +117,62 @@ export async function redeemCode(code: string): Promise<{ id: string } | { error
   if (error) return { error: redeemErrorKey(error.message) }
   return { id: data as string }
 }
+
+export type ListRole = 'viewer' | 'editor'
+
+export const ROLE_LABELS: Record<ListRole, string> = {
+  viewer: 'Puede ver',
+  editor: 'Puede editar',
+}
+
+export interface ListMember {
+  user_id: string
+  role: ListRole
+  player: { id: string; username: string; avatar_url: string | null }
+}
+
+export interface SharedList {
+  role: ListRole
+  list: GameList & { owner: { username: string } }
+}
+
+export async function loadMembers(listId: string): Promise<ListMember[]> {
+  const { data, error } = await supabase!
+    .from('game_list_members')
+    .select('user_id, role, player:profiles!game_list_members_user_id_fkey(id, username, avatar_url)')
+    .eq('list_id', listId)
+    .order('added_at')
+  if (error) throw error
+  return data as unknown as ListMember[]
+}
+
+export async function addMember(listId: string, userId: string, role: ListRole) {
+  const { error } = await supabase!.from('game_list_members').insert({ list_id: listId, user_id: userId, role })
+  if (error) throw error
+}
+
+export async function setMemberRole(listId: string, userId: string, role: ListRole) {
+  const { error } = await supabase!.from('game_list_members').update({ role }).eq('list_id', listId).eq('user_id', userId)
+  if (error) throw error
+}
+
+/** Expulsar a alguien (el dueño) o salir de una lista compartida (el propio miembro). */
+export async function removeMember(listId: string, userId: string) {
+  const { error } = await supabase!.from('game_list_members').delete().eq('list_id', listId).eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function loadSharedWithMe(me: string): Promise<SharedList[]> {
+  const { data, error } = await supabase!
+    .from('game_list_members')
+    .select(`role, list:game_lists!inner(${LIST}, owner:profiles!game_lists_owner_id_fkey(username))`)
+    .eq('user_id', me)
+    .order('added_at', { ascending: false })
+  if (error) throw error
+  return data as unknown as SharedList[]
+}
+
+export async function myRole(listId: string, me: string): Promise<ListRole | null> {
+  const { data } = await supabase!.from('game_list_members').select('role').eq('list_id', listId).eq('user_id', me).maybeSingle()
+  return (data as { role: ListRole } | null)?.role ?? null
+}

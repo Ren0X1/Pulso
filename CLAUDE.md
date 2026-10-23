@@ -70,7 +70,9 @@ cada push.
 ## Proyecto de Supabase
 
 - Ref `jaxxqwqyhptgbymlmmwr` · URL `https://jaxxqwqyhptgbymlmmwr.supabase.co` · MCP configurado en `.mcp.json` (aplicar migraciones y desplegar funciones desde Claude Code).
-- Migraciones aplicadas: `init`, `private_functions`, `rls_perf`, `share_codes`, `steam_sync` (las mismas que `supabase/migrations`).
+- Migraciones aplicadas: `init`, `private_functions`, `rls_perf`, `share_codes`, `steam_sync`, `list_members` (las mismas que `supabase/migrations`).
+- Listas: el código crea una **copia**; además el dueño puede invitar a **amigos** como lector o editor (`game_list_members`). Los editores solo tocan los juegos; nombre, visibilidad, códigos y miembros son del dueño.
+- Platino = todos los logros de Steam de un juego (`achievement_progress` con `unlocked = total`).
 - Funciones auxiliares de RLS en el esquema `private` (la API no lo publica). En `public` solo `create_share_code` y `redeem_share_code`, expuestas a propósito y vetadas a `anon` (lo vigila un test).
 - Edge Functions, todas con `verify_jwt = false` y el usuario comprobado en el código (con `verify_jwt` la pasarela rechaza el preflight CORS):
   - `auth-steam` — login con Steam.
