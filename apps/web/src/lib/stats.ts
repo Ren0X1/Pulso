@@ -57,3 +57,13 @@ export async function loadStats(userId: string) {
     platinums: progressRows.filter((p) => p.total > 0 && p.unlocked === p.total).length,
   }
 }
+
+/** Marcas del eje en valores redondos (1, 2 o 5 × 10ⁿ) que llegan hasta el máximo o lo pasan un poco. */
+export function niceTicks(max: number, target = 4): number[] {
+  if (max <= 0) return [0, 1]
+  const raw = max / target
+  const pow = 10 ** Math.floor(Math.log10(raw))
+  const step = [1, 2, 5, 10].map((m) => m * pow).find((s) => s >= raw)!
+  const top = Math.ceil(max / step) * step
+  return Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step)
+}

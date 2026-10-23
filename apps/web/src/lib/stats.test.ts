@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { monthSeries, summarizeLibrary, topByPlaytime } from './stats.ts'
+import { monthSeries, niceTicks, summarizeLibrary, topByPlaytime } from './stats.ts'
 
 const row = (status: string, minutes: number | null, name = 'X') => ({ status, playtime_minutes: minutes, game: { name, cover_url: null } })
 
@@ -51,5 +51,18 @@ describe('monthSeries', () => {
   it('ignora meses fuera de la ventana', () => {
     const series = monthSeries([{ month: '2020-01-01T00:00:00+00:00', unlocked: 9 }], new Date('2026-10-24T12:00:00Z'), 2)
     expect(series.map((m) => m.value)).toEqual([0, 0])
+  })
+})
+
+describe('niceTicks', () => {
+  it('marcas redondas que cubren el máximo', () => {
+    expect(niceTicks(530)).toEqual([0, 200, 400, 600])
+    expect(niceTicks(48)).toEqual([0, 20, 40, 60])
+    expect(niceTicks(7)).toEqual([0, 2, 4, 6, 8])
+    expect(niceTicks(1000)).toEqual([0, 500, 1000])
+  })
+
+  it('sin datos, una escala mínima', () => {
+    expect(niceTicks(0)).toEqual([0, 1])
   })
 })

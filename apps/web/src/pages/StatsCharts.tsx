@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { niceTicks } from '../lib/stats.ts'
 
 const nf = new Intl.NumberFormat('es', { maximumFractionDigits: 1 })
 
@@ -59,23 +60,31 @@ export function MonthColumns({
   unit: string
 }) {
   const [hover, setHover] = useState<number | null>(null)
-  const W = 720
+  // Se dibuja al ancho real de la caja: así el texto del eje mide siempre lo mismo, sin estirarse.
+  const box = useRef<HTMLDivElement>(null)
+  const [W, setW] = useState(720)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const observer = new ResizeObserver(([entry]) => setW(Math.max(280, Math.round(entry!.contentRect.width))))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
   const H = 220
-  const pad = { top: 12, right: 8, bottom: 26, left: 36 }
+  const pad = { top: 12, right: 8, bottom: 26, left: 40 }
   const innerW = W - pad.left - pad.right
   const innerH = H - pad.top - pad.bottom
-  const max = Math.max(1, ...series.map((s) => s.value))
-  const niceMax = Math.ceil(max / 10) * 10 || 10
+  const ticks = niceTicks(Math.max(...series.map((s) => s.value)))
+  const niceMax = ticks[ticks.length - 1]!
   const slot = innerW / series.length
-  const barW = Math.max(2, slot - 2) // 2px de separación entre columnas
-  const ticks = [0, niceMax / 2, niceMax]
+  const barW = Math.max(2, Math.min(28, slot - 2)) // 2px de separación como mínimo, sin columnas gordísimas
   const y = (v: number) => pad.top + innerH - (v / niceMax) * innerH
   const active = hover !== null ? series[hover] : null
 
   return (
     <figure className="chart" aria-label={title}>
-      <div className="chart-plot">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-hidden="true" onMouseLeave={() => setHover(null)}>
+      <div className="chart-plot" ref={box}>
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-hidden="true" onMouseLeave={() => setHover(null)}>
           {ticks.map((t) => (
             <g key={t}>
               <line x1={pad.left} x2={W - pad.right} y1={y(t)} y2={y(t)} className="chart-grid" />
