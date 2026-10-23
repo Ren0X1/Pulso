@@ -11,6 +11,8 @@ import { ListDetailPage } from './pages/ListDetail.tsx'
 import { ListsPage } from './pages/Lists.tsx'
 import { AchievementsPage } from './pages/Achievements.tsx'
 import { ActivityPage } from './pages/Activity.tsx'
+import { ComparePage } from './pages/Compare.tsx'
+import { NotificationsPage } from './pages/Notifications.tsx'
 import { SettingsPage } from './pages/Settings.tsx'
 
 function RequireSession() {
@@ -39,6 +41,8 @@ export const router = createBrowserRouter([
           { path: 'logros', element: <AchievementsPage />, handle: handle('Logros') },
           { path: 'amigos', element: <FriendsPage />, handle: handle('Amigos') },
           { path: 'u/:username', element: <ProfilePage />, handle: handle('Perfil') },
+          { path: 'u/:username/comparar', element: <ComparePage />, handle: handle('Comparar') },
+          { path: 'notificaciones', element: <NotificationsPage />, handle: handle('Notificaciones') },
           { path: 'ajustes', element: <SettingsPage />, handle: handle('Ajustes') },
         ],
       },

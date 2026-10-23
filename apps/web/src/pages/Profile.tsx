@@ -62,7 +62,14 @@ export function ProfilePage() {
             Editar perfil
           </Link>
         ) : (
-          state.status === 'signed-in' && <FriendButton me={state.session.user.id} other={profile.id} />
+          state.status === 'signed-in' && (
+            <div className="row-actions">
+              <FriendButton me={state.session.user.id} other={profile.id} />
+              <Link className="p-button" data-variant="ghost" to={`/u/${profile.username}/comparar`}>
+                Comparar
+              </Link>
+            </div>
+          )
         )}
       </section>
 

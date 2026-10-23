@@ -24,3 +24,12 @@ describe('Cover', () => {
     expect(container.textContent).toBe('Call of Duty: Black Ops')
   })
 })
+
+describe('Cover con datos que llegan tarde', () => {
+  it('cambia a la portada nueva cuando llega', () => {
+    const { container, rerender } = render(<Cover game={{ name: 'Portal 2', cover_url: null }} small />)
+    expect(container.querySelector('img')).toBeNull()
+    rerender(<Cover game={{ name: 'Portal 2', cover_url: STEAM }} small />)
+    expect(container.querySelector('img')?.getAttribute('src')).toBe(STEAM)
+  })
+})

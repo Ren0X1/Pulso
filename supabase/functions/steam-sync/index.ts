@@ -4,6 +4,7 @@
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0'
 import {
+  becamePlatinum,
   initialStatus,
   mapSchema,
   mapUnlocked,
@@ -131,8 +132,22 @@ async function syncAchievements(admin: SupabaseClient, userId: string, steamId: 
       const ids = new Map(known.map((a) => [a.api_name as string, a.id as number]))
       const rows = mapUnlocked(userId, player, ids)
       if (rows.length) {
+        const { count: before } = await admin
+          .from('user_achievements')
+          .select('achievement_id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .in('achievement_id', [...ids.values()])
         await admin.from('user_achievements').upsert(rows, { onConflict: 'user_id,achievement_id' })
         unlocked += rows.length
+        // Platino nuevo: queda en la actividad (y en el feed de los amigos, según la privacidad).
+        if (becamePlatinum(before ?? 0, rows.length, known.length)) {
+          await admin.from('activity_events').insert({
+            user_id: userId,
+            kind: 'platinum',
+            game_id: gameId,
+            payload: { name: game.name, appid: game.appid, achievements: known.length },
+          })
+        }
       }
     }
     await admin

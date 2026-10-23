@@ -7,6 +7,7 @@ import { Link } from 'react-router'
 import { countIncoming } from '../lib/friends.ts'
 import { Cover } from './Cover.tsx'
 import { SyncSteam } from './SyncSteam.tsx'
+import { FriendsFeed } from './FriendsFeed.tsx'
 import type { CatalogGame } from '../lib/library.ts'
 
 interface SteamAccount {
@@ -133,6 +134,8 @@ export function Home() {
           </ul>
         )}
       </section>
+
+      {state.status === 'signed-in' && <FriendsFeed me={state.session.user.id} />}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { CatalogGame } from '../lib/library.ts'
 import { PlatinumBadge } from './Platinum.tsx'
 
@@ -19,6 +19,8 @@ export function Cover({
 }) {
   const initial = game.cover_url && small ? game.cover_url.replace('/t_cover_big/', '/t_thumb/') : game.cover_url
   const [src, setSrc] = useState(initial)
+  // Si la portada llega después (datos cargados tarde), se usa la nueva en vez de quedarse con la primera.
+  useEffect(() => setSrc(initial), [initial])
   const cls = small ? 'cover cover-small' : 'cover'
 
   const image = !src ? (

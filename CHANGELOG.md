@@ -21,6 +21,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/).
 - 🏆 **Platinos**: los juegos con todos sus logros de Steam llevan insignia en la portada, en la lista y en el detalle, y el perfil muestra cuántos tienes junto a tu nombre y una vitrina con todos.
 - 🤝 **Listas compartidas**: invita a tus amigos a una lista como lectores o editores; los editores añaden y quitan juegos de la misma lista. Aparecen en *Compartidas contigo* y cualquiera puede salirse.
 
+### 👥 Social
+- 🔔 **Notificaciones**: solicitudes de amistad, quién las acepta e invitaciones a listas, con contador en la barra superior. Las crea la propia base de datos.
+- 📰 **Actividad de amigos** en Inicio: a qué juegan y sus platinos nuevos, según la privacidad de cada uno.
+- ⚖️ **Comparar** con cualquier jugador: juegos en común, horas y logros de cada uno, y platinos.
+
 ### 🖥️ Launcher
 - 💾 Detecta tus juegos de Steam instalados en todos los discos, con su tamaño, y el filtro **Instalados** en la biblioteca.
 - ▶️ **Jugar** a través de Steam, con **parámetros de lanzamiento** propios por juego (se guardan en tu cuenta), **Abrir carpeta** e **Instalar en Steam**.

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useMatches } from 'react-router'
-import { Activity, House, Library, ListChecks, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
+import { Activity, Bell, House, Library, ListChecks, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Avatar, Logo, PulseMark } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import { countIncoming } from '../lib/friends.ts'
+import { countUnread } from '../lib/social.ts'
 import { isDesktop } from '../lib/platform.ts'
 import { NowPlaying } from './NowPlaying.tsx'
 import { UpdateBanner } from './UpdateBanner.tsx'
@@ -53,9 +54,11 @@ export function AppShell() {
   const me = state.status === 'signed-in' ? state.session.user.id : null
   const location = useLocation()
   const [incoming, setIncoming] = useState(0)
+  const [unread, setUnread] = useState(0)
 
   useEffect(() => {
     if (me) void countIncoming(me).then(setIncoming)
+    if (me) void countUnread().then(setUnread)
   }, [me, location.pathname])
 
   return (
@@ -84,6 +87,10 @@ export function AppShell() {
         {desktop && me && <NowPlaying userId={me} />}
         {profile && (
           <div className="topbar-account">
+            <NavLink to="/notificaciones" className="icon-button bell" aria-label={unread ? `Notificaciones, ${unread} sin leer` : "Notificaciones"}>
+              <Bell size={16} strokeWidth={1.5} aria-hidden="true" />
+              {unread > 0 && <span className="bell-count num">{unread}</span>}
+            </NavLink>
             <NavLink to={profilePath} className="account-link">
               <Avatar name={profile.username} src={profile.avatar_url} size={28} />
               <span className="account-name">{profile.username}</span>

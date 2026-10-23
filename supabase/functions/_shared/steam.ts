@@ -112,3 +112,8 @@ export function mapUnlocked(userId: string, player: unknown, idByApiName: Map<st
     return [{ user_id: userId, achievement_id: id, unlocked_at: a.unlocktime ? new Date(a.unlocktime * 1000).toISOString() : null }]
   })
 }
+
+/** ¿Esta sincronización ha completado todos los logros del juego? (para anunciar el platino una sola vez) */
+export function becamePlatinum(unlockedBefore: number, unlockedAfter: number, total: number): boolean {
+  return total > 0 && unlockedAfter === total && unlockedBefore < total
+}

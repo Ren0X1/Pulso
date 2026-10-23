@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   achievementIconUrl,
+  becamePlatinum,
   initialStatus,
   mapSchema,
   mapUnlocked,
@@ -151,5 +152,14 @@ describe('achievementIconUrl', () => {
     const ok = 'https://shared.fastly.steamstatic.com/community_assets/images/apps/1/a.jpg'
     expect(achievementIconUrl(ok)).toBe(ok)
     expect(achievementIconUrl('')).toBeNull()
+  })
+})
+
+describe('becamePlatinum', () => {
+  it('solo cuando esta sincronización completa el juego', () => {
+    expect(becamePlatinum(41, 42, 42)).toBe(true)
+    expect(becamePlatinum(42, 42, 42)).toBe(false)
+    expect(becamePlatinum(0, 41, 42)).toBe(false)
+    expect(becamePlatinum(0, 0, 0)).toBe(false)
   })
 })
