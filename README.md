@@ -1,12 +1,12 @@
 # 💓 Pulso
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white) ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black) ![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?style=flat-square&logo=tauri&logoColor=white) ![Rust](https://img.shields.io/badge/Rust-desktop%20core-000000?style=flat-square&logo=rust&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-auth%20%2B%20db-3FCF8E?style=flat-square&logo=supabase&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-RLS-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white) ![Steam](https://img.shields.io/badge/Steam-Web%20API-000000?style=flat-square&logo=steam&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square&logo=windows&logoColor=white) ![Linux](https://img.shields.io/badge/Linux-supported-FCC624?style=flat-square&logo=linux&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?style=flat-square&logo=typescript&logoColor=white) ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black) ![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?style=flat-square&logo=tauri&logoColor=white) ![Rust](https://img.shields.io/badge/Rust-desktop%20core-000000?style=flat-square&logo=rust&logoColor=white) ![Supabase](https://img.shields.io/badge/Supabase-auth%20%2B%20db-3FCF8E?style=flat-square&logo=supabase&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-RLS-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white) ![Steam](https://img.shields.io/badge/Steam-Web%20API-000000?style=flat-square&logo=steam&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square&logo=windows&logoColor=white) ![Linux](https://img.shields.io/badge/Linux-supported-FCC624?style=flat-square&logo=linux&logoColor=black)
 
 > **Your whole gaming world, in one place.** A desktop launcher for Windows and Linux plus a social web app on the same account: your library, achievements, playtime, backlog lists and friends, synced from Steam. 🎮
 
 Pulso does not replace Steam — it sits on top of it. The launcher finds your installed games, starts them through Steam, opens their folders and keeps your settings in the cloud; the web lets you show off your profile, compare achievements with friends and share backlog lists with a single code. Everything runs on free tiers. 💸
 
-> 🚧 **Status: phases 1–3 of 6.** Sign in through Steam, import your Steam library with playtime and achievements, search the world catalog, manage your library, add friends and share lists with a code — on the web and in the desktop shell. Launching games and Discord Rich Presence come next (phase 4). See the [roadmap](#️-roadmap) and [`CHANGELOG.md`](CHANGELOG.md).
+> 🚧 **Status: phases 1–5 of 6, not public yet.** Everything below works and is tested against a real Steam account, on the web (run locally) and in the Windows launcher. Hosting the web for everyone is the last step. See the [roadmap](#️-roadmap) and [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -31,7 +31,7 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 
 ---
 
-## ✨ What it will do
+## ✨ What it does
 
 ### 🗂️ Library
 - Every game you own on Steam plus any game from the world catalog, old or new.
@@ -41,20 +41,25 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 
 ### 🏆 Achievements and stats
 - Real Steam achievements with global rarity, progress per game and recent unlocks.
-- Playtime, completion rates and charts.
+- 🏆 **Platinums**: games with every Steam achievement get a badge on their cover, and your profile shows how many you have.
+- Playtime, completion rates and progress bars.
 - If Steam does not share something (private profile, game without achievements), Pulso **says so** instead of showing made-up numbers.
 
 ### 👥 Social
 - Gamer profile with avatar, banner, bio and favorites, with privacy per section: *public · friends · private*.
 - Friend requests, friends' activity, games in common and side-by-side comparisons.
 - 🔗 **Shareable lists**: share a backlog with a code like `PX7K-2M9Q-RT`; whoever loads it gets their own copy.
+- 🤝 **Shared lists**: invite friends to the same list as viewers or editors.
+- 🔔 Notifications for friend requests, accepted requests and list invites.
 
 ### 🖥️ Desktop launcher
 - Detects installed Steam games on Windows and Linux.
-- Launches them through Steam (`steam://rungameid/…`), so login, DRM and updates stay with Steam.
+- Launches them through Steam, so login, DRM and updates stay with Steam — with your own **launch options** per game.
 - Opens the install folder, shows the size on disk and keeps per-game launch options.
-- 🎧 **Discord Rich Presence**: your Discord status shows the game you are playing, its cover art, session time and a link to your Pulso profile — even when you launched it from Steam.
-- Settings synced to your account, tray icon, optional start with the system and auto-updates.
+- 🎮 Knows what you are playing even if you started it from Steam, and logs every session to your activity.
+- 🎧 **Discord Rich Presence**: your Discord status shows the game you are playing, its cover art and session time.
+- Settings synced to your account, tray icon, optional start with Windows and signed auto-updates.
+- ⬇️ Installers (Windows `.exe`, Linux `.deb` / `.AppImage`) are attached to every [GitHub Release](https://github.com/Ren0X1/Pulso/releases).
 
 ---
 
