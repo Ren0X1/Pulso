@@ -295,16 +295,6 @@ a.p-button {
 .privacy-title {
   font-weight: 500;
 }
-.privacy-row select {
-  height: var(--control-height);
-  padding: 0 12px;
-  border: 1px solid var(--control);
-  border-radius: 10px;
-  background: var(--ground);
-  color: var(--text);
-  font: inherit;
-}
-
 /* Login */
 .login {
   display: grid;
@@ -507,7 +497,6 @@ a.p-button {
   flex-wrap: wrap;
 }
 .search,
-.toolbar select,
 .tag-form input {
   height: var(--control-height);
   padding: 0 14px;
@@ -912,15 +901,6 @@ a.p-button {
   border-bottom-color: var(--control);
   outline: none;
 }
-.list-head select {
-  height: var(--control-height);
-  padding: 0 14px;
-  border: 1px solid var(--control);
-  border-radius: var(--radius-control);
-  background: var(--ground);
-  color: var(--text);
-  font: inherit;
-}
 .share-help {
   margin-bottom: 16px;
 }
@@ -1187,15 +1167,8 @@ a.p-button {
   font-size: var(--fs-section);
   font-weight: 600;
 }
-.members select,
-.invite-row select {
+.members select {
   height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--control);
-  border-radius: var(--radius-control);
-  background: var(--ground);
-  color: var(--text);
-  font: inherit;
 }
 .members {
   margin-bottom: 12px;

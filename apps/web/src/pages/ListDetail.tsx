@@ -291,7 +291,13 @@ export function ListDetailPage() {
                 <Cover game={item.game} />
                 <span className="cover-name">{item.game.name}</span>
                 {canEdit && (
-                  <button type="button" className="link-button cover-meta" onClick={() => void removeFromList(id, item.game_id).then(reload)}>
+                  <button
+                    type="button"
+                    className="link-button cover-meta"
+                    onClick={() =>
+                      void removeFromList(id, item.game_id).then(reload, () => setError('No se pudo quitar el juego. Inténtalo de nuevo.'))
+                    }
+                  >
                     Quitar
                   </button>
                 )}
