@@ -21,6 +21,10 @@ describe('buildSearchQuery', () => {
     expect(q).toContain('limit 20;')
   })
 
+  it('deja fuera ediciones (Deluxe, Collector…) que IGDB guarda como versiones del juego principal', () => {
+    expect(buildSearchQuery('elden ring')).toContain('where game_type = (0,8,9,10,11) & version_parent = null;')
+  })
+
   it('escapa comillas y barras: el texto no puede romper la consulta', () => {
     const backslash = '\\'
     const q = buildSearchQuery(`a"; fields *; where id = 1; "${backslash}`)

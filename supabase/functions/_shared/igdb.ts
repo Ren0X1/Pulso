@@ -39,7 +39,7 @@ export function normalizeTerm(term: string): string | null {
 
 export function buildSearchQuery(term: string, limit = 20): string {
   const safe = term.replace(/[\r\n]+/g, ' ').replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-  return `search "${safe}"; fields ${FIELDS}; where game_type = ${GAME_TYPES}; limit ${limit};`
+  return `search "${safe}"; fields ${FIELDS}; where game_type = ${GAME_TYPES} & version_parent = null; limit ${limit};`
 }
 
 export function coverUrl(imageId: string, size = 't_cover_big'): string {
