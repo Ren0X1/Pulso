@@ -12,6 +12,7 @@ import { ListsPage } from './pages/Lists.tsx'
 import { AchievementsPage } from './pages/Achievements.tsx'
 import { ActivityPage } from './pages/Activity.tsx'
 import { ComparePage } from './pages/Compare.tsx'
+import { ErrorScreen } from './pages/ErrorScreen.tsx'
 import { NotificationsPage } from './pages/Notifications.tsx'
 import { SettingsPage } from './pages/Settings.tsx'
 
@@ -25,28 +26,34 @@ function RequireSession() {
 const handle = (title: string): RouteHandle => ({ title })
 
 export const router = createBrowserRouter([
-  { path: '/login', element: <Login /> },
-  { path: '/auth/callback', element: <AuthCallback /> },
   {
-    element: <RequireSession />,
+    // Si cualquier pantalla falla, mensaje y salida en vez de una página en blanco.
+    errorElement: <ErrorScreen />,
     children: [
+      { path: '/login', element: <Login /> },
+      { path: '/auth/callback', element: <AuthCallback /> },
       {
-        element: <AppShell />,
+        element: <RequireSession />,
         children: [
-          { index: true, element: <Home />, handle: handle('Inicio') },
-          { path: 'biblioteca', element: <LibraryPage />, handle: handle('Biblioteca') },
-          { path: 'listas', element: <ListsPage />, handle: handle('Listas') },
-          { path: 'listas/:id', element: <ListDetailPage />, handle: handle('Lista') },
-          { path: 'actividad', element: <ActivityPage />, handle: handle('Actividad') },
-          { path: 'logros', element: <AchievementsPage />, handle: handle('Logros') },
-          { path: 'amigos', element: <FriendsPage />, handle: handle('Amigos') },
-          { path: 'u/:username', element: <ProfilePage />, handle: handle('Perfil') },
-          { path: 'u/:username/comparar', element: <ComparePage />, handle: handle('Comparar') },
-          { path: 'notificaciones', element: <NotificationsPage />, handle: handle('Notificaciones') },
-          { path: 'ajustes', element: <SettingsPage />, handle: handle('Ajustes') },
+          {
+            element: <AppShell />,
+            children: [
+              { index: true, element: <Home />, handle: handle('Inicio') },
+              { path: 'biblioteca', element: <LibraryPage />, handle: handle('Biblioteca') },
+              { path: 'listas', element: <ListsPage />, handle: handle('Listas') },
+              { path: 'listas/:id', element: <ListDetailPage />, handle: handle('Lista') },
+              { path: 'actividad', element: <ActivityPage />, handle: handle('Actividad') },
+              { path: 'logros', element: <AchievementsPage />, handle: handle('Logros') },
+              { path: 'amigos', element: <FriendsPage />, handle: handle('Amigos') },
+              { path: 'u/:username', element: <ProfilePage />, handle: handle('Perfil') },
+              { path: 'u/:username/comparar', element: <ComparePage />, handle: handle('Comparar') },
+              { path: 'notificaciones', element: <NotificationsPage />, handle: handle('Notificaciones') },
+              { path: 'ajustes', element: <SettingsPage />, handle: handle('Ajustes') },
+            ],
+          },
         ],
       },
+      { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
-  { path: '*', element: <Navigate to="/" replace /> },
 ])
