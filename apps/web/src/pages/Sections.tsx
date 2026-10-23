@@ -8,11 +8,3 @@ export function ActivityPage() {
   )
 }
 
-export function AchievementsPage() {
-  return (
-    <EmptyState title="Sin logros todavía">
-      Los logros de Steam, con su rareza global y tu progreso por juego, llegan en la Fase 3.
-    </EmptyState>
-  )
-}
-

@@ -20,6 +20,7 @@ import {
 import { AddGameDialog } from './AddGameDialog.tsx'
 import { EntryDialog } from './EntryDialog.tsx'
 import { Cover } from './Cover.tsx'
+import { SyncSteam } from './SyncSteam.tsx'
 
 const dateFormat = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' })
 
@@ -70,6 +71,8 @@ export function LibraryPage() {
         </p>
         <Button onClick={() => setAdding(true)}>Añadir juego</Button>
       </div>
+
+      <SyncSteam onSynced={() => void reload()} />
 
       <nav className="tabs" aria-label="Estado">
         <button type="button" aria-pressed={!params.status} onClick={() => update({ status: null })}>
@@ -134,7 +137,7 @@ export function LibraryPage() {
           <p>
             {filtered
               ? 'Prueba con otro estado, etiqueta o búsqueda.'
-              : 'Añade juegos del catálogo mundial. Los de tu cuenta de Steam llegarán solos en la Fase 3.'}
+              : 'Sincroniza con Steam para importar tus juegos, o añade cualquiera del catálogo mundial.'}
           </p>
           {!filtered && <Button onClick={() => setAdding(true)}>Añadir juego</Button>}
         </section>

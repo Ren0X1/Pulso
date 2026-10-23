@@ -5,7 +5,7 @@
 // para no gastar el cupo de IGDB con peticiones anónimas.
 
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
-import { IGDB_GAMES_URL, buildSearchQuery, mapIgdbGame, normalizeTerm } from '../_shared/igdb.ts'
+import { IGDB_GAMES_URL, buildSearchQuery, mapIgdbGame, normalizeTerm, planCatalogMerge } from '../_shared/igdb.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -69,16 +69,41 @@ Deno.serve(async (req) => {
     const mapped = (await searchIgdb(term)).map(mapIgdbGame)
     if (mapped.length === 0) return json({ games: [] })
 
-    const { data: games, error } = await admin
-      .from('games')
-      .upsert(
-        mapped.map((m) => ({ ...m.game, updated_at: new Date().toISOString() })),
-        { onConflict: 'igdb_id' },
-      )
-      .select('id, igdb_id, slug, name, summary, release_date, cover_url, genres, platforms')
-    if (error) throw new Error(`games: ${error.code}`)
+    const COLUMNS = 'id, igdb_id, slug, name, summary, release_date, cover_url, genres, platforms'
+    const now = new Date().toISOString()
 
-    const idByIgdb = new Map(games.map((g: { id: number; igdb_id: number }) => [g.igdb_id, g.id]))
+    // Juegos ya importados de Steam: se completan con IGDB en vez de duplicarse.
+    const steamIds = mapped.flatMap((m) => m.steamAppIds)
+    const gameBySteamApp = new Map<string, { id: number; igdb_id: number | null }>()
+    if (steamIds.length) {
+      const { data } = await admin
+        .from('game_external_ids')
+        .select('external_id, game:games!inner(id, igdb_id)')
+        .eq('source', 'steam')
+        .in('external_id', steamIds)
+      for (const row of (data ?? []) as unknown as { external_id: string; game: { id: number; igdb_id: number | null } }[]) {
+        gameBySteamApp.set(row.external_id, row.game)
+      }
+    }
+    const plan = planCatalogMerge(mapped, gameBySteamApp)
+
+    const games: { id: number; igdb_id: number }[] = []
+    for (const { gameId, row } of plan.merge) {
+      // La portada vertical oficial de Steam se queda; el resto lo aporta IGDB.
+      const { slug: _slug, cover_url: _cover, ...igdb } = row
+      const { data } = await admin.from('games').update({ ...igdb, updated_at: now }).eq('id', gameId).select(COLUMNS).single()
+      if (data) games.push(data)
+    }
+    if (plan.insert.length) {
+      const { data, error } = await admin
+        .from('games')
+        .upsert(plan.insert.map((m) => ({ ...m.game, updated_at: now })), { onConflict: 'igdb_id' })
+        .select(COLUMNS)
+      if (error) throw new Error(`games: ${error.code}`)
+      games.push(...data)
+    }
+
+    const idByIgdb = new Map(games.map((g) => [g.igdb_id, g.id]))
     const external = mapped.flatMap((m) => {
       const gameId = idByIgdb.get(m.game.igdb_id)
       if (!gameId) return []
@@ -91,7 +116,7 @@ Deno.serve(async (req) => {
     await admin.from('game_external_ids').upsert(external, { onConflict: 'source,external_id', ignoreDuplicates: true })
 
     const order = new Map(mapped.map((m, i) => [m.game.igdb_id, i]))
-    games.sort((a: { igdb_id: number }, b: { igdb_id: number }) => order.get(a.igdb_id)! - order.get(b.igdb_id)!)
+    games.sort((a, b) => order.get(a.igdb_id)! - order.get(b.igdb_id)!)
     return json({ games })
   } catch (err) {
     console.error('catalog', err instanceof Error ? err.message : 'error desconocido')

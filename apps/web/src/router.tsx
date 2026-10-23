@@ -9,7 +9,8 @@ import { FriendsPage } from './pages/Friends.tsx'
 import { LibraryPage } from './pages/Library.tsx'
 import { ListDetailPage } from './pages/ListDetail.tsx'
 import { ListsPage } from './pages/Lists.tsx'
-import { AchievementsPage, ActivityPage } from './pages/Sections.tsx'
+import { AchievementsPage } from './pages/Achievements.tsx'
+import { ActivityPage } from './pages/Sections.tsx'
 import { SettingsPage } from './pages/Settings.tsx'
 
 function RequireSession() {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSearchQuery, coverUrl, mapIgdbGame, normalizeTerm } from './igdb.ts'
+import { buildSearchQuery, coverUrl, mapIgdbGame, normalizeTerm, planCatalogMerge } from './igdb.ts'
 
 describe('normalizeTerm', () => {
   it('recorta espacios y exige al menos 2 caracteres', () => {
@@ -77,5 +77,22 @@ describe('mapIgdbGame', () => {
 describe('coverUrl', () => {
   it('usa la CDN de IGDB con el tamaño pedido', () => {
     expect(coverUrl('abc', 't_thumb')).toBe('https://images.igdb.com/igdb/image/upload/t_thumb/abc.jpg')
+  })
+})
+
+describe('planCatalogMerge', () => {
+  const hl2 = mapIgdbGame({ id: 233, name: 'Half-Life 2', slug: 'half-life-2', external_games: [{ uid: '220', external_game_source: 1 }] })
+  const pong = mapIgdbGame({ id: 9, name: 'Pong', slug: 'pong' })
+
+  it('un juego ya importado de Steam sin datos de IGDB se completa en vez de duplicarse', () => {
+    const plan = planCatalogMerge([hl2, pong], new Map([['220', { id: 50, igdb_id: null }]]))
+    expect(plan.merge).toEqual([{ gameId: 50, row: hl2.game }])
+    expect(plan.insert).toEqual([hl2, pong].slice(1))
+  })
+
+  it('si el juego de Steam ya tiene IGDB, no se toca', () => {
+    const plan = planCatalogMerge([hl2], new Map([['220', { id: 50, igdb_id: 233 }]]))
+    expect(plan.merge).toEqual([])
+    expect(plan.insert).toEqual([hl2])
   })
 })

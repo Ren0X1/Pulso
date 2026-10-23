@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase.ts'
 import { Link } from 'react-router'
 import { countIncoming } from '../lib/friends.ts'
 import { Cover } from './Cover.tsx'
+import { SyncSteam } from './SyncSteam.tsx'
 import type { CatalogGame } from '../lib/library.ts'
 
 interface SteamAccount {
@@ -46,6 +47,7 @@ export function Home() {
       .from('user_games')
       .select('game_id, game:games!inner(id, name, slug, summary, release_date, cover_url, genres, platforms)')
       .eq('user_id', me)
+      .order('last_played_at', { ascending: false, nullsFirst: false })
       .order('added_at', { ascending: false })
       .limit(6)
       .then(({ data }) => setRecent((data ?? []) as unknown as { game_id: number; game: CatalogGame }[]))
@@ -59,7 +61,7 @@ export function Home() {
       <p className="finding">
         {isPrivate
           ? 'Tu perfil de Steam es privado: Pulso no podrá importar tus juegos ni tus logros hasta que lo hagas público.'
-          : 'Tu cuenta de Steam está vinculada. La importación de juegos, horas y logros llega en la Fase 3.'}
+          : 'Tu cuenta de Steam está vinculada. Sincroniza para traer tus juegos, tus horas y tus logros.'}
       </p>
 
       <section className="panel steam-card" aria-label="Tu cuenta de Steam">
@@ -87,6 +89,11 @@ export function Home() {
             </a>
           </div>
         )}
+        {account && (
+          <div className="steam-sync-slot">
+            <SyncSteam onSynced={() => window.location.reload()} />
+          </div>
+        )}
         {isPrivate && (
           <p className="steam-help">
             En Steam, abre{' '}
@@ -104,17 +111,16 @@ export function Home() {
         </p>
       )}
 
-      <section className="panel" aria-label="Añadidos recientemente">
+      <section className="panel" aria-label="Últimos juegos">
         <div className="panel-title-row">
-          <h2 className="panel-title">Añadidos recientemente</h2>
+          <h2 className="panel-title">Últimos juegos</h2>
           <Link to="/biblioteca">Biblioteca</Link>
         </div>
         {recent === null ? (
           <p className="muted">Cargando…</p>
         ) : recent.length === 0 ? (
           <p className="muted">
-            Aún no hay juegos en tu biblioteca. <Link to="/biblioteca">Añade el primero</Link>. Las horas y lo jugado esta semana
-            llegarán al importar Steam (Fase 3).
+            Aún no hay juegos en tu biblioteca. Sincroniza con Steam o <Link to="/biblioteca">añade uno del catálogo</Link>.
           </p>
         ) : (
           <ul className="cover-grid cover-grid-row">

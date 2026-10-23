@@ -63,3 +63,23 @@ export function mapIgdbGame(raw: IgdbGame): { game: GameRow; steamAppIds: string
     ),
   }
 }
+
+type Mapped = ReturnType<typeof mapIgdbGame>
+
+/**
+ * Juegos importados de Steam que aún no tienen datos de IGDB se completan (merge) en lugar de crear
+ * un segundo juego. El resto se inserta o actualiza por igdb_id.
+ */
+export function planCatalogMerge(
+  mapped: Mapped[],
+  gameBySteamApp: Map<string, { id: number; igdb_id: number | null }>,
+): { merge: { gameId: number; row: GameRow }[]; insert: Mapped[] } {
+  const merge: { gameId: number; row: GameRow }[] = []
+  const insert: Mapped[] = []
+  for (const m of mapped) {
+    const target = m.steamAppIds.map((id) => gameBySteamApp.get(id)).find((g) => g && g.igdb_id === null)
+    if (target) merge.push({ gameId: target.id, row: m.game })
+    else insert.push(m)
+  }
+  return { merge, insert }
+}

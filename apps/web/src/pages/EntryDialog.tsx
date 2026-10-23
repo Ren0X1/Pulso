@@ -11,6 +11,7 @@ import {
 } from '../lib/library.ts'
 import { Cover } from './Cover.tsx'
 import { Dialog } from './Dialog.tsx'
+import { GameAchievements } from './GameAchievements.tsx'
 
 const MAX_TAGS = 10
 
@@ -81,7 +82,7 @@ export function EntryDialog({
           <p>
             <span className="muted">Horas jugadas: </span>
             <span className="num">{formatPlaytime(current.playtime_minutes)}</span>
-            {current.source === 'manual' && <span className="muted"> (llegarán al importar Steam)</span>}
+            {current.source === 'manual' && <span className="muted"> (añadido a mano: Steam no lo tiene)</span>}
           </p>
           {game.summary && <p className="entry-summary">{game.summary}</p>}
         </div>
@@ -138,6 +139,8 @@ export function EntryDialog({
           </form>
         )}
       </div>
+
+      {current.source === 'steam' && <GameAchievements userId={userId} gameId={current.game_id} />}
 
       {error && <p className="notice" role="alert">{error}</p>}
 

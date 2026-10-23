@@ -9,6 +9,22 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/).
 
 ---
 
+## [1.1.0.f0] - 2026-10-23 · 🎮 tu biblioteca de verdad
+### ✨ Añadido
+- 🔄 **Sincronizar con Steam**: importa tus juegos, horas y última partida, y los logros (25 juegos por tanda, empezando por lo que juegas ahora). Si tu perfil o tus detalles de juego son privados, Pulso te dice qué cambiar en Steam en vez de enseñar una biblioteca vacía.
+- 🏆 **Logros**: totales, progreso por juego con barra, recientes con su rareza global y la lista completa en el detalle de cada juego (los ocultos no revelan su nombre hasta que los consigues).
+- 🌍 **Catálogo mundial (IGDB)**: busca cualquier juego, de los clásicos a los estrenos. Lo encontrado se guarda en caché y completa los juegos importados de Steam en vez de duplicarlos.
+- 📚 **Biblioteca**: cuadrícula de portadas o lista, estados (*Pendiente, Jugando, Completado, Abandonado*), favoritos, etiquetas, búsqueda, orden y filtros que se guardan en la URL; de 60 en 60.
+- 👥 **Amigos**: buscar jugadores, solicitudes, lista de amigos y botón de amistad en los perfiles.
+- 🔗 **Listas compartibles**: genera un código ; quien lo carga recibe una copia privada. Revocables.
+- 👤 Perfil con biblioteca y listas según la privacidad de cada uno; Inicio con tus últimos juegos y solicitudes pendientes.
+
+### 🔒 Seguridad
+- Las funciones auxiliares de privacidad salen de la API pública ( dejaba averiguar amistades ajenas).
+- Políticas RLS optimizadas y amistades visibles según la privacidad de la lista de amigos.
+
+---
+
 ## [0.1.0.f0] - sin publicar · 🌱 fundamentos
 ### ✨ Añadido
 - 🧱 Monorepo con pnpm y Turborepo, CI en GitHub Actions y releases automáticas.

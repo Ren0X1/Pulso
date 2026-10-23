@@ -69,7 +69,12 @@ cada push.
 
 ## Proyecto de Supabase
 
-- Ref `jaxxqwqyhptgbymlmmwr` · URL `https://jaxxqwqyhptgbymlmmwr.supabase.co` · MCP configurado en `.mcp.json`.
-- Migraciones aplicadas: `init`, `private_functions` (funciones auxiliares fuera de `public` para que la API no las publique como `/rpc`).
-- `auth-steam` desplegada sin JWT. Secretos en el panel (*Edge Functions → Secrets*): `STEAM_API_KEY`, `PULSO_APP_URL`.
-- Pendiente (Fase 2): los avisos de rendimiento del asesor (`auth.uid()` → `(select auth.uid())` en las políticas e índices en claves foráneas).
+- Ref  · URL  · MCP configurado en  (aplicar migraciones y desplegar funciones desde Claude Code).
+- Migraciones aplicadas: , , , ,  (las mismas que ).
+- Funciones auxiliares de RLS en el esquema  (la API no lo publica). En  solo  y , expuestas a propósito y vetadas a  (lo vigila un test).
+- Edge Functions, todas con  y el usuario comprobado en el código (con  la pasarela rechaza el preflight CORS):
+  -  — login con Steam.
+  -  — búsqueda en IGDB con caché en ; completa los juegos importados de Steam en vez de duplicarlos.
+  -  — importa biblioteca, horas y logros (25 juegos con logros por tanda, una vez cada 10 min).
+- Secretos (*Edge Functions → Secrets* en el panel; guardarlos desde el MCP está desactivado por Supabase): , , , .
+- Al desplegar una función por MCP hay que subir también sus ficheros de  con nombre .

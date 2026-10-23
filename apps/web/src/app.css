@@ -979,3 +979,150 @@ a.p-button {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* ───────── Steam y logros ───────── */
+
+.sync {
+  display: grid;
+  gap: 8px;
+}
+.sync-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sync-when {
+  font-size: var(--fs-small);
+}
+.sync-result {
+  color: var(--muted);
+}
+.steam-sync-slot {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+.spin {
+  animation: spin 900ms linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* KPIs: una tarjeta dividida, cifras como texto, sin iconos. */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+.kpis > div {
+  padding: 0 20px;
+  border-left: 1px solid var(--rule);
+}
+.kpis > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.kpi-label {
+  color: var(--muted);
+  font-size: var(--fs-small);
+}
+.kpi-value {
+  font-size: var(--fs-kpi);
+  font-weight: 600;
+  line-height: 32px;
+}
+.kpi-note {
+  margin-top: 12px;
+  font-size: var(--fs-small);
+}
+
+.ach-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ach-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.ach-row:last-child {
+  border-bottom: 0;
+}
+.ach-row[data-locked] .ach-name {
+  color: var(--muted);
+}
+.ach-icon {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 4px;
+  background: var(--raised);
+}
+.ach-meta {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.ach-meta .muted {
+  font-size: var(--fs-small);
+}
+.ach-name {
+  font-weight: 500;
+}
+.ach-rarity,
+.ach-count {
+  flex: none;
+  color: var(--muted);
+  font-size: var(--fs-small);
+  text-align: right;
+}
+.ach-count {
+  color: var(--text);
+  font-size: var(--fs-body);
+}
+.bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--raised);
+  overflow: hidden;
+}
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.game-ach {
+  display: grid;
+  gap: 8px;
+}
+.game-ach .field-label {
+  margin: 0;
+}
+.ach-list-compact {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+@media (max-width: 760px) {
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .kpis > div {
+    padding: 0;
+    border-left: 0;
+  }
+  .ach-rarity {
+    display: none;
+  }
+}

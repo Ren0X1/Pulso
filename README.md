@@ -6,7 +6,7 @@
 
 Pulso does not replace Steam — it sits on top of it. The launcher finds your installed games, starts them through Steam, opens their folders and keeps your settings in the cloud; the web lets you show off your profile, compare achievements with friends and share backlog lists with a single code. Everything runs on free tiers. 💸
 
-> 🚧 **Status: phase 1 of 6.** Sign in through Steam, your profile, privacy settings and the navigation work on the web and in the desktop shell. Library, achievements, friends and launching games are still to come — the app says so on each screen instead of showing made-up data. See the [roadmap](#️-roadmap) and [`CHANGELOG.md`](CHANGELOG.md).
+> 🚧 **Status: phases 1–3 of 6.** Sign in through Steam, import your Steam library with playtime and achievements, search the world catalog, manage your library, add friends and share lists with a code — on the web and in the desktop shell. Launching games and Discord Rich Presence come next (phase 4). See the [roadmap](#️-roadmap) and [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -80,8 +80,8 @@ API keys (Steam, IGDB) live only in Supabase Edge Functions — never in the app
 | Phase | Scope | State |
 |-------|-------|-------|
 | 1️⃣ Foundations | Monorepo, design system and logo, database and RLS, Steam login, navigation, basic profile, Tauri shell | 🟢 Done |
-| 2️⃣ Product | Catalog, real library, public profiles, friends, shareable lists | ⚪ Pending |
-| 3️⃣ Steam | Game and playtime import, achievements | ⚪ Pending |
+| 2️⃣ Product | Catalog, real library, public profiles, friends, shareable lists | 🟢 Done |
+| 3️⃣ Steam | Game and playtime import, achievements | 🟢 Done |
 | 4️⃣ Launcher | Detection, launching, folders, launch options, now-playing detection, Discord Rich Presence, cloud settings, installers | ⚪ Pending |
 | 5️⃣ Social | Friends' activity, comparisons, notifications | ⚪ Pending |
 | 6️⃣ Launch | Tests, security, performance, monitoring | ⚪ Pending |
