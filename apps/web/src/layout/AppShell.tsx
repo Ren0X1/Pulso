@@ -7,6 +7,7 @@ import { countIncoming } from '../lib/friends.ts'
 import { countUnread } from '../lib/social.ts'
 import { isDesktop } from '../lib/platform.ts'
 import { NowPlaying } from './NowPlaying.tsx'
+import { DownloadLauncher } from './DownloadLauncher.tsx'
 
 
 const desktop = isDesktop()
@@ -78,6 +79,7 @@ export function AppShell() {
           <NavRow item={{ to: profilePath, label: 'Perfil', icon: UserRound }} />
           <NavRow item={{ to: '/ajustes', label: 'Ajustes', icon: Settings }} />
         </nav>
+        <DownloadLauncher />
       </aside>
 
       <header className="topbar">

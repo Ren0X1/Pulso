@@ -1580,3 +1580,34 @@ a.link-chip:hover {
     border-left: 0;
   }
 }
+
+/* Descarga del launcher, al pie de la barra lateral (solo web en ordenador). */
+.download-launcher {
+  display: grid;
+  gap: 8px;
+  margin: auto 12px 16px;
+  padding: 14px;
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+.download-title {
+  font-weight: 600;
+}
+.download-text {
+  font-size: var(--fs-small);
+  line-height: 16px;
+}
+.download-button {
+  height: 34px;
+  padding: 0 12px;
+  font-size: var(--fs-small);
+}
+.download-alt {
+  color: var(--muted);
+  font-size: var(--fs-small);
+  text-align: center;
+}
+/* Filas de portadas (favoritos, últimos juegos): mismo tamaño que la biblioteca, no a todo lo ancho. */
+.cover-grid-row {
+  grid-template-columns: repeat(6, minmax(0, 170px));
+}
