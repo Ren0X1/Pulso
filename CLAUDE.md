@@ -69,12 +69,12 @@ cada push.
 
 ## Proyecto de Supabase
 
-- Ref  · URL  · MCP configurado en  (aplicar migraciones y desplegar funciones desde Claude Code).
-- Migraciones aplicadas: , , , ,  (las mismas que ).
-- Funciones auxiliares de RLS en el esquema  (la API no lo publica). En  solo  y , expuestas a propósito y vetadas a  (lo vigila un test).
-- Edge Functions, todas con  y el usuario comprobado en el código (con  la pasarela rechaza el preflight CORS):
-  -  — login con Steam.
-  -  — búsqueda en IGDB con caché en ; completa los juegos importados de Steam en vez de duplicarlos.
-  -  — importa biblioteca, horas y logros (25 juegos con logros por tanda, una vez cada 10 min).
-- Secretos (*Edge Functions → Secrets* en el panel; guardarlos desde el MCP está desactivado por Supabase): , , , .
-- Al desplegar una función por MCP hay que subir también sus ficheros de  con nombre .
+- Ref `jaxxqwqyhptgbymlmmwr` · URL `https://jaxxqwqyhptgbymlmmwr.supabase.co` · MCP configurado en `.mcp.json` (aplicar migraciones y desplegar funciones desde Claude Code).
+- Migraciones aplicadas: `init`, `private_functions`, `rls_perf`, `share_codes`, `steam_sync` (las mismas que `supabase/migrations`).
+- Funciones auxiliares de RLS en el esquema `private` (la API no lo publica). En `public` solo `create_share_code` y `redeem_share_code`, expuestas a propósito y vetadas a `anon` (lo vigila un test).
+- Edge Functions, todas con `verify_jwt = false` y el usuario comprobado en el código (con `verify_jwt` la pasarela rechaza el preflight CORS):
+  - `auth-steam` — login con Steam.
+  - `catalog` — búsqueda en IGDB con caché en `games`; completa los juegos importados de Steam en vez de duplicarlos.
+  - `steam-sync` — importa biblioteca, horas y logros (25 juegos con logros por tanda, una vez cada 10 min).
+- Secretos (*Edge Functions → Secrets* en el panel; guardarlos desde el MCP está desactivado por Supabase): `STEAM_API_KEY`, `PULSO_APP_URL`, `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`.
+- Al desplegar una función por MCP hay que subir también sus ficheros de `_shared/` con nombre `../_shared/<fichero>`.

@@ -16,11 +16,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/).
 - 🌍 **Catálogo mundial (IGDB)**: busca cualquier juego, de los clásicos a los estrenos. Lo encontrado se guarda en caché y completa los juegos importados de Steam en vez de duplicarlos.
 - 📚 **Biblioteca**: cuadrícula de portadas o lista, estados (*Pendiente, Jugando, Completado, Abandonado*), favoritos, etiquetas, búsqueda, orden y filtros que se guardan en la URL; de 60 en 60.
 - 👥 **Amigos**: buscar jugadores, solicitudes, lista de amigos y botón de amistad en los perfiles.
-- 🔗 **Listas compartibles**: genera un código ; quien lo carga recibe una copia privada. Revocables.
+- 🔗 **Listas compartibles**: genera un código `XXXX-XXXX-XX`; quien lo carga recibe una copia privada. Revocables.
 - 👤 Perfil con biblioteca y listas según la privacidad de cada uno; Inicio con tus últimos juegos y solicitudes pendientes.
 
 ### 🔒 Seguridad
-- Las funciones auxiliares de privacidad salen de la API pública ( dejaba averiguar amistades ajenas).
+- Las funciones auxiliares de privacidad salen de la API pública (`are_friends` dejaba averiguar amistades ajenas).
 - Políticas RLS optimizadas y amistades visibles según la privacidad de la lista de amigos.
 
 ---
