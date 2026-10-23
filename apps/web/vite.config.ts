@@ -5,7 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   clearScreen: false,
-  server: { port: 5173, strictPort: true },
+  // En Windows el vigilante de archivos se pierde cambios (sobre todo en packages/), y la página se queda
+  // con código o CSS viejo. Comprobar los archivos cada 300 ms es lo fiable.
+  server: { port: 5173, strictPort: true, watch: { usePolling: true, interval: 300 } },
   envPrefix: ['VITE_'],
   test: { environment: 'jsdom', setupFiles: ['./vitest.setup.ts'] },
 })

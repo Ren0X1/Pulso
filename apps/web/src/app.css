@@ -468,7 +468,11 @@ a.p-button {
 .tabs {
   display: flex;
   gap: 24px;
+  /* Se desplaza en horizontal si no cabe (móvil), sin barra visible y sin scroll vertical:
+     el subrayado de 1 px que sobresale abajo creaba una barra de scroll vertical. */
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
   border-bottom: 1px solid var(--border);
 }
 .tabs button {
