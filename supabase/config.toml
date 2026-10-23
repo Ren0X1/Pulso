@@ -8,3 +8,6 @@ verify_jwt = false
 # La función comprueba el usuario en su código; con verify_jwt la pasarela rechazaría el preflight CORS.
 [functions.catalog]
 verify_jwt = false
+
+[functions.steam-sync]
+verify_jwt = false
