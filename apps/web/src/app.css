@@ -1126,3 +1126,10 @@ a.p-button {
     display: none;
   }
 }
+/* En una caja con altura máxima, la rejilla comprimía las filas y el texto se montaba: lista en bloque. */
+.ach-list-compact {
+  display: block;
+}
+.ach-list-compact .ach-row {
+  align-items: flex-start;
+}

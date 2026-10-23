@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router'
 import { PRIVACY_LABELS, type PrivacyLevel } from '@pulso/core'
 import { Button } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
-import { searchCatalog, type CatalogGame } from '../lib/library.ts'
+import { searchCatalog, searchMyLibrary, type CatalogGame } from '../lib/library.ts'
 import {
   addToList,
   createShareCode,
@@ -82,12 +82,14 @@ function SharePanel({ listId }: { listId: string }) {
 
 function AddToListDialog({
   open,
+  userId,
   listId,
   have,
   onClose,
   onAdded,
 }: {
   open: boolean
+  userId: string
   listId: string
   have: Set<number>
   onClose: () => void
@@ -105,19 +107,26 @@ function AddToListDialog({
     }
   }, [open])
 
+  // Primero tu biblioteca (no depende de IGDB), después el catálogo mundial.
   useEffect(() => {
     if (term.trim().length < 2) return setResults(null)
     const handle = setTimeout(async () => {
-      const res = await searchCatalog(term)
-      if ('error' in res) {
-        setError(res.error === 'catalog_not_configured' ? 'El catálogo aún no está configurado.' : 'El catálogo no responde ahora mismo.')
-        return setResults(null)
-      }
-      setError(null)
-      setResults(res.games)
+      const [mine, catalog] = await Promise.all([searchMyLibrary(userId, term), searchCatalog(term)])
+      const seen = new Set(mine.map((g) => g.id))
+      const extra = 'error' in catalog ? [] : catalog.games.filter((g) => !seen.has(g.id))
+      setError(
+        'error' in catalog
+          ? mine.length
+            ? 'Solo se muestran juegos de tu biblioteca: el catálogo mundial no está disponible ahora.'
+            : catalog.error === 'catalog_not_configured'
+              ? 'No está en tu biblioteca, y el catálogo mundial aún no está configurado.'
+              : 'No está en tu biblioteca, y el catálogo mundial no responde ahora mismo.'
+          : null,
+      )
+      setResults([...mine, ...extra])
     }, 400)
     return () => clearTimeout(handle)
-  }, [term])
+  }, [term, userId])
 
   return (
     <Dialog open={open} title="Añadir a la lista" onClose={onClose} wide>
@@ -125,8 +134,8 @@ function AddToListDialog({
         className="search search-large"
         type="search"
         autoFocus
-        placeholder="Busca cualquier juego"
-        aria-label="Buscar en el catálogo"
+        placeholder="Busca en tu biblioteca o en el catálogo"
+        aria-label="Buscar juegos"
         value={term}
         onChange={(e) => setTerm(e.target.value)}
       />
@@ -240,7 +249,7 @@ export function ListDetailPage() {
         {items.length === 0 ? (
           <section className="empty">
             <h2>La lista está vacía</h2>
-            <p>{mine ? 'Añade juegos del catálogo.' : 'Su dueño aún no ha añadido juegos.'}</p>
+            <p>{mine ? 'Añade juegos de tu biblioteca o del catálogo mundial.' : 'Su dueño aún no ha añadido juegos.'}</p>
           </section>
         ) : (
           <ul className="cover-grid">
@@ -284,6 +293,7 @@ export function ListDetailPage() {
       {mine && (
         <AddToListDialog
           open={adding}
+          userId={me}
           listId={id}
           have={new Set(items.map((i) => i.game_id))}
           onClose={() => setAdding(false)}

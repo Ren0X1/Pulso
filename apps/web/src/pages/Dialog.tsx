@@ -20,7 +20,11 @@ export function Dialog({
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      dialog.showModal()
+      // React enfoca autoFocus antes de que el diálogo esté abierto, y ese foco se pierde.
+      dialog.querySelector<HTMLElement>('input, textarea, select')?.focus()
+    }
     if (!open && dialog.open) dialog.close()
   }, [open])
 

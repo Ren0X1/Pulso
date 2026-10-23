@@ -106,6 +106,18 @@ export async function loadLibrary(userId: string, p: LibraryParams): Promise<{ r
   return { rows: (data ?? []) as unknown as LibraryEntry[], total: count ?? 0 }
 }
 
+/** Juegos de la biblioteca del usuario cuyo nombre contiene el texto. No depende de IGDB. */
+export async function searchMyLibrary(userId: string, term: string, limit = 10): Promise<CatalogGame[]> {
+  const clean = term.trim().slice(0, 80).replace(/[%_\\]/g, (c) => `\\${c}`)
+  const { data } = await supabase!
+    .from('user_games')
+    .select('game:games!inner(id, name, slug, summary, release_date, cover_url, genres, platforms)')
+    .eq('user_id', userId)
+    .ilike('game.name', '%' + clean + '%')
+    .limit(limit)
+  return ((data ?? []) as unknown as { game: CatalogGame }[]).map((r) => r.game)
+}
+
 export async function loadMyTags(userId: string): Promise<string[]> {
   const { data } = await supabase!.from('user_games').select('tags').eq('user_id', userId).neq('tags', '{}')
   const all = new Set<string>()

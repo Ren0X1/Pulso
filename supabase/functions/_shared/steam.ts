@@ -63,6 +63,15 @@ export function pickAchievementGames(
     .slice(0, limit)
 }
 
+const ICON_PATH = /\/steamcommunity\/public\/images\/apps\/(\d+)\/([\w.]+)$/
+
+/** Steam aún da los iconos en una ruta antigua que ya no sirve para los juegos recientes. */
+export function achievementIconUrl(url: string): string | null {
+  if (!url) return null
+  const match = ICON_PATH.exec(url)
+  return match ? `https://shared.fastly.steamstatic.com/community_assets/images/apps/${match[1]}/${match[2]}` : url
+}
+
 interface SchemaAchievement {
   name: string
   displayName: string
@@ -86,8 +95,8 @@ export function mapSchema(gameId: number, schema: unknown, global: unknown) {
     api_name: a.name,
     name: a.displayName,
     description: a.description || null,
-    icon_url: a.icon,
-    icon_locked_url: a.icongray,
+    icon_url: achievementIconUrl(a.icon),
+    icon_locked_url: achievementIconUrl(a.icongray),
     hidden: a.hidden === 1,
     global_percent: Number.isFinite(percents.get(a.name)) ? percents.get(a.name)! : null,
   }))

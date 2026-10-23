@@ -40,7 +40,7 @@ export function AchievementsPage() {
             <p className="kpi-value num">{progress ? totalUnlocked.toLocaleString('es') : '—'}</p>
           </div>
           <div>
-            <p className="kpi-label">Juegos con logros</p>
+            <p className="kpi-label">Juegos con algún logro</p>
             <p className="kpi-value num">{progress ? progress.length : '—'}</p>
           </div>
           <div>

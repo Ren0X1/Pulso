@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  achievementIconUrl,
   initialStatus,
   mapSchema,
   mapUnlocked,
@@ -136,5 +137,19 @@ describe('mapUnlocked', () => {
 
   it('si Steam no da los logros del jugador, ninguno', () => {
     expect(mapUnlocked('u1', { playerstats: { success: false } }, ids)).toEqual([])
+  })
+})
+
+describe('achievementIconUrl', () => {
+  it('pasa las direcciones antiguas de Steam a la CDN que sirve todos los iconos', () => {
+    expect(
+      achievementIconUrl('https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/252490/861b.jpg'),
+    ).toBe('https://shared.fastly.steamstatic.com/community_assets/images/apps/252490/861b.jpg')
+  })
+
+  it('deja igual lo que ya está bien o no reconoce', () => {
+    const ok = 'https://shared.fastly.steamstatic.com/community_assets/images/apps/1/a.jpg'
+    expect(achievementIconUrl(ok)).toBe(ok)
+    expect(achievementIconUrl('')).toBeNull()
   })
 })
