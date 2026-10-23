@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useMatches } from 'react-router'
 import { Activity, Bell, House, Library, ListChecks, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Avatar, Logo, PulseMark } from '@pulso/ui'
@@ -7,9 +7,11 @@ import { countIncoming } from '../lib/friends.ts'
 import { countUnread } from '../lib/social.ts'
 import { isDesktop } from '../lib/platform.ts'
 import { NowPlaying } from './NowPlaying.tsx'
-import { UpdateBanner } from './UpdateBanner.tsx'
+
 
 const desktop = isDesktop()
+// Solo el launcher se actualiza: en la web no se descarga este código.
+const UpdateBanner = lazy(async () => ({ default: (await import('./UpdateBanner.tsx')).UpdateBanner }))
 
 interface NavItem {
   to: string
@@ -103,7 +105,11 @@ export function AppShell() {
       </header>
 
       <main className="canvas">
-        {desktop && <UpdateBanner />}
+        {desktop && (
+          <Suspense fallback={null}>
+            <UpdateBanner />
+          </Suspense>
+        )}
         <Outlet />
       </main>
 

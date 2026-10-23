@@ -1,4 +1,5 @@
-import { createPulsoClient, type SupabaseClient } from '@pulso/core'
+// Ruta directa: el índice de @pulso/core arrastra zod, que solo necesitan algunas pantallas.
+import { createPulsoClient, type SupabaseClient } from '@pulso/core/supabase'
 import type { LoginClient } from './platform.ts'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
