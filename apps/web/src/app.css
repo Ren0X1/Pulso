@@ -1196,3 +1196,95 @@ a.p-button {
 .members .row-actions {
   margin-left: auto;
 }
+
+/* ───────── Launcher ───────── */
+
+.now-playing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 0 20px;
+  white-space: nowrap;
+}
+.now-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.6s var(--ease) infinite;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .now-dot {
+    animation: none;
+  }
+}
+@media (max-width: 760px) {
+  .now-playing {
+    display: none;
+  }
+}
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.switch-row label {
+  display: grid;
+  gap: 2px;
+}
+.switch {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--control);
+  border-radius: 999px;
+  background: var(--ground);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.switch span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.switch[aria-checked='true'] {
+  border-color: var(--text);
+  background: var(--text);
+}
+.switch[aria-checked='true'] span {
+  background: #000;
+  transform: translateX(16px);
+}
+.launch-args {
+  display: grid;
+  gap: 8px;
+}
+.launch-args .field-label {
+  margin: 0;
+}
+.launch-args input {
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  color: var(--text);
+  font: inherit;
+}
+.dialog:focus {
+  outline: none;
+}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { Grid2x2, List, Star } from 'lucide-react'
+import { Grid2x2, HardDrive, List, Star } from 'lucide-react'
 import { Button, Field } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import {
@@ -21,6 +21,10 @@ import { AddGameDialog } from './AddGameDialog.tsx'
 import { EntryDialog } from './EntryDialog.tsx'
 import { Cover } from './Cover.tsx'
 import { PlatinumBadge } from './Platinum.tsx'
+import { gameIdsForAppIds, installedGames, steamAppId, type InstalledGame } from '../lib/desktop.ts'
+import { isDesktop } from '../lib/platform.ts'
+
+const desktop = isDesktop()
 import { loadPlatinums } from '../lib/achievements.ts'
 import { SyncSteam } from './SyncSteam.tsx'
 
@@ -39,9 +43,14 @@ export function LibraryPage() {
   const [q, setQ] = useState(params.q)
   const [platinums, setPlatinums] = useState<Set<number>>(new Set())
 
+  const [installed, setInstalled] = useState<Map<number, InstalledGame>>(new Map())
+
   const reload = useCallback(async () => {
     try {
-      setData(await loadLibrary(me, params))
+      const local = desktop ? await installedGames() : []
+      setInstalled(new Map(local.map((g) => [g.appid, g])))
+      const only = desktop && params.installed ? await gameIdsForAppIds(local.map((g) => g.appid)) : undefined
+      setData(await loadLibrary(me, params, only))
       setTags(await loadMyTags(me))
       setPlatinums(await loadPlatinums(me))
       setError(false)
@@ -65,7 +74,7 @@ export function LibraryPage() {
     return () => clearTimeout(handle)
   }, [q])
 
-  const filtered = params.status || params.favorite || params.tag || params.q
+  const filtered = params.status || params.favorite || params.installed || params.tag || params.q
 
   return (
     <div className="stack">
@@ -101,6 +110,11 @@ export function LibraryPage() {
         <button type="button" className="toggle" aria-pressed={params.favorite} onClick={() => update({ favorite: !params.favorite })}>
           <Star size={14} strokeWidth={1.5} aria-hidden="true" /> Favoritos
         </button>
+        {desktop && (
+          <button type="button" className="toggle" aria-pressed={params.installed} onClick={() => update({ installed: !params.installed })}>
+            <HardDrive size={14} strokeWidth={1.5} aria-hidden="true" /> Instalados
+          </button>
+        )}
         {tags.length > 0 && (
           <select aria-label="Etiqueta" value={params.tag ?? ''} onChange={(e) => update({ tag: e.target.value || null })}>
             <option value="">Todas las etiquetas</option>
@@ -156,6 +170,7 @@ export function LibraryPage() {
                 <span className="cover-name">{entry.game.name}</span>
                 <span className="cover-meta">
                   {STATUS_LABELS[entry.status]}
+                  {installed.has(steamAppId(entry.game.external) ?? -1) && ' · Instalado'}
                   {entry.favorite && <Star className="fav" size={12} strokeWidth={1.5} aria-label="Favorito" />}
                 </span>
               </button>
@@ -214,6 +229,7 @@ export function LibraryPage() {
         entry={editing}
         userId={me}
         knownTags={tags}
+        installed={editing ? (installed.get(steamAppId(editing.game.external) ?? -1) ?? null) : null}
         onClose={() => setEditing(null)}
         onChanged={() => void reload()}
       />

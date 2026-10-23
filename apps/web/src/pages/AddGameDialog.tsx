@@ -81,6 +81,7 @@ export function AddGameDialog({
         className="search search-large"
         type="search"
         autoFocus
+        data-autofocus
         placeholder="Busca cualquier juego: Half-Life, Tetris, Elden Ring…"
         aria-label="Buscar en el catálogo"
         value={term}

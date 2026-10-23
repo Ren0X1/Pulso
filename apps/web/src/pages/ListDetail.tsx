@@ -140,6 +140,7 @@ function AddToListDialog({
         className="search search-large"
         type="search"
         autoFocus
+        data-autofocus
         placeholder="Busca en tu biblioteca o en el catálogo"
         aria-label="Buscar juegos"
         value={term}

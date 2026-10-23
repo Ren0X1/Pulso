@@ -3,6 +3,10 @@ import { BIO_MAX, PRIVACY_LABELS, PRIVACY_SECTIONS, profileUpdateSchema, type Pr
 import { Button, Field } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import { supabase } from '../lib/supabase.ts'
+import { isDesktop } from '../lib/platform.ts'
+import { LauncherSettingsPanel } from './LauncherSettings.tsx'
+
+const desktop = isDesktop()
 
 const SECTION_LABELS: Record<PrivacySection, { title: string; description: string }> = {
   library: { title: 'Biblioteca', description: 'Tus juegos, su estado y tus horas.' },
@@ -125,7 +129,8 @@ function PrivacyForm() {
 }
 
 export function SettingsPage() {
-  const { signOut } = useAuth()
+  const { signOut, state } = useAuth()
+  const me = state.status === 'signed-in' ? state.session.user.id : null
   return (
     <div className="settings">
       <section className="settings-section">
@@ -142,6 +147,15 @@ export function SettingsPage() {
         </div>
         <PrivacyForm />
       </section>
+      {desktop && me && (
+        <section className="settings-section">
+          <div className="settings-label">
+            <h2>Launcher</h2>
+            <p className="muted">Solo en la app de escritorio. Lo de Discord se guarda en tu cuenta y te sigue a cualquier PC.</p>
+          </div>
+          <LauncherSettingsPanel userId={me} />
+        </section>
+      )}
       <section className="settings-section">
         <div className="settings-label">
           <h2>Sesión</h2>

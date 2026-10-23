@@ -24,6 +24,8 @@ export const SORT_LABELS: Record<LibrarySort, string> = {
 export interface LibraryParams {
   status: GameStatus | null
   favorite: boolean
+  /** Solo en el launcher: juegos instalados en este PC. */
+  installed: boolean
   tag: string | null
   q: string
   sort: LibrarySort
@@ -31,7 +33,7 @@ export interface LibraryParams {
   page: number
 }
 
-const DEFAULTS: LibraryParams = { status: null, favorite: false, tag: null, q: '', sort: 'added', view: 'grid', page: 1 }
+const DEFAULTS: LibraryParams = { status: null, favorite: false, installed: false, tag: null, q: '', sort: 'added', view: 'grid', page: 1 }
 
 const oneOf = <T extends string>(list: readonly T[], value: string | null): T | null =>
   list.includes(value as T) ? (value as T) : null
@@ -43,6 +45,7 @@ export function parseLibraryParams(search: URLSearchParams): LibraryParams {
   return {
     status: oneOf(STATUSES, search.get('estado')),
     favorite: search.get('favoritos') === '1',
+    installed: search.get('instalados') === '1',
     tag: tag || null,
     q: (search.get('q') ?? '').trim().slice(0, 80),
     sort: oneOf(SORTS, search.get('orden')) ?? DEFAULTS.sort,
@@ -55,6 +58,7 @@ export function toSearchParams(p: LibraryParams): URLSearchParams {
   const out = new URLSearchParams()
   if (p.status) out.set('estado', p.status)
   if (p.favorite) out.set('favoritos', '1')
+  if (p.installed) out.set('instalados', '1')
   if (p.tag) out.set('etiqueta', p.tag)
   if (p.q) out.set('q', p.q)
   if (p.sort !== DEFAULTS.sort) out.set('orden', p.sort)
@@ -72,6 +76,8 @@ export interface CatalogGame {
   cover_url: string | null
   genres: string[]
   platforms: string[]
+  /** Ids en otras fuentes (Steam, IGDB); solo se cargan donde hacen falta. */
+  external?: { source: string; external_id: string }[]
 }
 
 export interface LibraryEntry {
@@ -87,10 +93,15 @@ export interface LibraryEntry {
 }
 
 const ENTRY = `game_id, status, favorite, tags, playtime_minutes, last_played_at, source, added_at,
-  game:games!inner(id, name, slug, summary, release_date, cover_url, genres, platforms)`
+  game:games!inner(id, name, slug, summary, release_date, cover_url, genres, platforms, external:game_external_ids(source, external_id))`
 
-export async function loadLibrary(userId: string, p: LibraryParams): Promise<{ rows: LibraryEntry[]; total: number }> {
+export async function loadLibrary(
+  userId: string,
+  p: LibraryParams,
+  onlyGameIds?: number[],
+): Promise<{ rows: LibraryEntry[]; total: number }> {
   let query = supabase!.from('user_games').select(ENTRY, { count: 'exact' }).eq('user_id', userId)
+  if (onlyGameIds) query = query.in('game_id', onlyGameIds.length ? onlyGameIds : [-1])
   if (p.status) query = query.eq('status', p.status)
   if (p.favorite) query = query.eq('favorite', true)
   if (p.tag) query = query.contains('tags', [p.tag])

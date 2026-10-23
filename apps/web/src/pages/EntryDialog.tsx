@@ -1,5 +1,17 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Star, X } from 'lucide-react'
+import { Download, FolderOpen, Play, Star, X } from 'lucide-react'
+import {
+  formatBytes,
+  installGame,
+  launchGame,
+  loadLauncherSettings,
+  openGameFolder,
+  saveLauncherSettings,
+  steamAppId,
+  type InstalledGame,
+  type LauncherSettings,
+} from '../lib/desktop.ts'
+import { isDesktop } from '../lib/platform.ts'
 import { Button } from '@pulso/ui'
 import {
   formatPlaytime,
@@ -14,29 +26,60 @@ import { Dialog } from './Dialog.tsx'
 import { GameAchievements } from './GameAchievements.tsx'
 
 const MAX_TAGS = 10
+const desktop = isDesktop()
 
 export function EntryDialog({
   entry,
   userId,
   knownTags,
+  installed = null,
   onClose,
   onChanged,
 }: {
   entry: LibraryEntry | null
   userId: string
   knownTags: string[]
+  /** Solo en el launcher: el juego instalado en este PC, si lo está. */
+  installed?: InstalledGame | null
   onClose: () => void
   onChanged: () => void
 }) {
   const [current, setCurrent] = useState(entry)
   const [tag, setTag] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [settings, setSettings] = useState<LauncherSettings | null>(null)
+  const [launchArgs, setLaunchArgs] = useState('')
+  const entryAppId = entry ? steamAppId(entry.game.external) : null
 
   useEffect(() => {
     setCurrent(entry)
     setTag('')
     setError(null)
   }, [entry])
+
+  useEffect(() => {
+    if (!desktop || entryAppId === null) return
+    void loadLauncherSettings().then((s) => {
+      setSettings(s)
+      setLaunchArgs(s.launchOptions[entryAppId] ?? '')
+    })
+  }, [entryAppId])
+
+  async function saveArgs() {
+    if (!settings || entryAppId === null) return
+    const clean = launchArgs.trim()
+    if ((settings.launchOptions[entryAppId] ?? '') === clean) return
+    const launchOptions = { ...settings.launchOptions }
+    if (clean) launchOptions[entryAppId] = clean
+    else delete launchOptions[entryAppId]
+    const next = { ...settings, launchOptions }
+    try {
+      await saveLauncherSettings(userId, next)
+      setSettings(next)
+    } catch {
+      setError('No se pudieron guardar los parámetros.')
+    }
+  }
 
   if (!current) return <Dialog open={false} title="" onClose={onClose}>{null}</Dialog>
 
@@ -70,9 +113,26 @@ export function EntryDialog({
     }
   }
 
+  async function act(action: () => Promise<unknown>) {
+    try {
+      await action()
+    } catch {
+      setError('Steam no respondió. ¿Está instalado y abierto?')
+    }
+  }
+
   const { game } = current
+  const appid = steamAppId(game.external)
   return (
-    <Dialog open={!!entry} title={game.name} onClose={onClose}>
+    <Dialog
+      open={!!entry}
+      title={game.name}
+      onClose={() => {
+        // Cerrar con Esc o con la X no debe perder unos parámetros recién escritos.
+        void saveArgs()
+        onClose()
+      }}
+    >
       <div className="entry-head">
         <Cover game={game} />
         <div className="entry-facts">
@@ -84,9 +144,58 @@ export function EntryDialog({
             <span className="num">{formatPlaytime(current.playtime_minutes)}</span>
             {current.source === 'manual' && <span className="muted"> (añadido a mano: Steam no lo tiene)</span>}
           </p>
+          {installed && (
+            <p>
+              <span className="muted">En disco: </span>
+              <span className="num">{formatBytes(installed.sizeBytes)}</span>
+            </p>
+          )}
           {game.summary && <p className="entry-summary">{game.summary}</p>}
         </div>
       </div>
+
+      {desktop && appid !== null && (
+        <div className="row-actions">
+          {installed ? (
+            <>
+              <Button
+                onClick={() =>
+                  void act(async () => {
+                    await saveArgs()
+                    await launchGame(appid, launchArgs)
+                  })
+                }
+              >
+                <Play size={14} strokeWidth={2} aria-hidden="true" /> Jugar
+              </Button>
+              <Button variant="ghost" onClick={() => void act(() => openGameFolder(appid))}>
+                <FolderOpen size={14} strokeWidth={1.5} aria-hidden="true" /> Abrir carpeta
+              </Button>
+            </>
+          ) : (
+            <Button variant="ghost" onClick={() => void act(() => installGame(appid))}>
+              <Download size={14} strokeWidth={1.5} aria-hidden="true" /> Instalar en Steam
+            </Button>
+          )}
+        </div>
+      )}
+      {desktop && appid !== null && installed && (
+        <div className="launch-args">
+          <label htmlFor="launch-args" className="field-label">
+            Parámetros de lanzamiento
+          </label>
+          <input
+            id="launch-args"
+            value={launchArgs}
+            maxLength={512}
+            spellCheck={false}
+            placeholder="-novid -console -windowed …"
+            onChange={(e) => setLaunchArgs(e.target.value)}
+            onBlur={() => void saveArgs()}
+          />
+          <p className="muted kpi-note">Se pasan al juego a través de Steam al pulsar Jugar. Se guardan en tu cuenta.</p>
+        </div>
+      )}
 
       <fieldset className="segmented">
         <legend>Estado</legend>

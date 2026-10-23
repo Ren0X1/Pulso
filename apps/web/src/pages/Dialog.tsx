@@ -23,7 +23,8 @@ export function Dialog({
     if (open && !dialog.open) {
       dialog.showModal()
       // React enfoca autoFocus antes de que el diálogo esté abierto, y ese foco se pierde.
-      dialog.querySelector<HTMLElement>('input, textarea, select')?.focus()
+      // Solo los campos marcados con data-autofocus; si no hay, el foco va al propio diálogo.
+      ;(dialog.querySelector<HTMLElement>('[data-autofocus]') ?? dialog).focus()
     }
     if (!open && dialog.open) dialog.close()
   }, [open])
@@ -33,6 +34,7 @@ export function Dialog({
       ref={ref}
       className={wide ? 'dialog dialog-wide' : 'dialog'}
       aria-label={title}
+      tabIndex={-1}
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
     >

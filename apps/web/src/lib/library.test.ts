@@ -5,13 +5,14 @@ const parse = (query: string) => parseLibraryParams(new URLSearchParams(query))
 
 describe('parseLibraryParams', () => {
   it('valores por defecto', () => {
-    expect(parse('')).toEqual({ status: null, favorite: false, tag: null, q: '', sort: 'added', view: 'grid', page: 1 })
+    expect(parse('')).toEqual({ status: null, favorite: false, installed: false, tag: null, q: '', sort: 'added', view: 'grid', page: 1 })
   })
 
   it('lee todos los filtros', () => {
-    expect(parse('estado=playing&favoritos=1&etiqueta=rpg&q=zelda&orden=name&vista=list&pagina=3')).toEqual({
+    expect(parse('estado=playing&favoritos=1&instalados=1&etiqueta=rpg&q=zelda&orden=name&vista=list&pagina=3')).toEqual({
       status: 'playing',
       favorite: true,
+      installed: true,
       tag: 'rpg',
       q: 'zelda',
       sort: 'name',
@@ -42,7 +43,7 @@ describe('toSearchParams', () => {
   })
 
   it('ida y vuelta sin pérdidas', () => {
-    const state = parse('estado=dropped&favoritos=1&etiqueta=coop&q=it&orden=playtime&vista=list&pagina=2')
+    const state = parse('estado=dropped&favoritos=1&instalados=1&etiqueta=coop&q=it&orden=playtime&vista=list&pagina=2')
     expect(parseLibraryParams(toSearchParams(state))).toEqual(state)
   })
 })

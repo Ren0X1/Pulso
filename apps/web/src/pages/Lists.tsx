@@ -129,7 +129,7 @@ export function ListsPage() {
 
       <Dialog open={creating} title="Nueva lista" onClose={() => setCreating(false)}>
         <form className="stack" onSubmit={(e) => void submitNew(e)}>
-          <Field label="Nombre" value={name} maxLength={80} autoFocus onChange={(e) => setName(e.target.value)} error={error} />
+          <Field label="Nombre" value={name} maxLength={80} autoFocus data-autofocus onChange={(e) => setName(e.target.value)} error={error} />
           <Button type="submit" busy={busy}>
             Crear lista
           </Button>
@@ -142,6 +142,7 @@ export function ListsPage() {
             label="Código de la lista"
             value={code}
             autoFocus
+        data-autofocus
             placeholder="ABCD-EFGH-23"
             hint="Se creará una copia privada en tu cuenta; los cambios no afectan a la original."
             error={error}

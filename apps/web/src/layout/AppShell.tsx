@@ -4,6 +4,10 @@ import { Activity, House, Library, ListChecks, LogOut, Settings, Trophy, UserRou
 import { Avatar, Logo, PulseMark } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import { countIncoming } from '../lib/friends.ts'
+import { isDesktop } from '../lib/platform.ts'
+import { NowPlaying } from './NowPlaying.tsx'
+
+const desktop = isDesktop()
 
 interface NavItem {
   to: string
@@ -76,6 +80,7 @@ export function AppShell() {
           </span>
           <h1 className="topbar-title">{title}</h1>
         </div>
+        {desktop && me && <NowPlaying userId={me} />}
         {profile && (
           <div className="topbar-account">
             <NavLink to={profilePath} className="account-link">
