@@ -42,17 +42,18 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 ### 🏆 Achievements and stats
 - Real Steam achievements with global rarity, progress per game and recent unlocks.
 - 🏆 **Platinums**: games with every Steam achievement get a badge on their cover, and your profile shows how many you have.
-- Playtime, completion rates and progress bars.
+- 📊 **Stats page**: hours played, unplayed games, most played, library by status and achievements per month.
 - If Steam does not share something (private profile, game without achievements), Pulso **says so** instead of showing made-up numbers.
 
 ### 👥 Social
-- Gamer profile with avatar, banner, bio and favorites, with privacy per section: *public · friends · private*.
+- Gamer profile with your own avatar and banner, bio, external links and up to 6 favorite games, with privacy per section: *public · friends · private*.
 - Friend requests, friends' activity, games in common and side-by-side comparisons.
 - 🔗 **Shareable lists**: share a backlog with a code like `PX7K-2M9Q-RT`; whoever loads it gets their own copy.
 - 🤝 **Shared lists**: invite friends to the same list as viewers or editors.
 - 🔔 Notifications for friend requests, accepted requests and list invites.
 
 ### 🖥️ Desktop launcher
+- ⬇️ The web offers the right installer (Windows or Linux) when you visit it from a computer.
 - Detects installed Steam games on Windows and Linux.
 - Launches them through Steam, so login, DRM and updates stay with Steam — with your own **launch options** per game.
 - Opens the install folder, shows the size on disk and keeps per-game launch options.

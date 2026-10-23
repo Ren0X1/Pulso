@@ -21,6 +21,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/).
 - 🏆 **Platinos**: los juegos con todos sus logros de Steam llevan insignia en la portada, en la lista y en el detalle, y el perfil muestra cuántos tienes junto a tu nombre y una vitrina con todos.
 - 🤝 **Listas compartidas**: invita a tus amigos a una lista como lectores o editores; los editores añaden y quitan juegos de la misma lista. Aparecen en *Compartidas contigo* y cualquiera puede salirse.
 
+### 👤 Perfil y estadísticas
+- 🖼️ **Avatar y banner propios**: se recortan y se guardan en WebP (máx. 2 MB); el avatar puede volver al de Steam cuando quieras.
+- 🔗 **Enlaces** en el perfil (Twitch, YouTube, X, Kick, Instagram, TikTok, Steam o tu web), hasta 6 y solo `https`.
+- ⭐ **Juegos favoritos**: elige hasta 6 de tu biblioteca y salen los primeros en tu perfil.
+- 📊 **Estadísticas**: horas jugadas, juegos sin estrenar, los 10 más jugados, tu biblioteca por estado y logros por mes de los últimos dos años.
+- ⬇️ La web ofrece **descargar el launcher** para Windows o Linux, solo desde un ordenador (ni en el móvil ni dentro del propio launcher).
+
 ### 👥 Social
 - 🔔 **Notificaciones**: solicitudes de amistad, quién las acepta e invitaciones a listas, con contador en la barra superior. Las crea la propia base de datos.
 - 📰 **Actividad de amigos** en Inicio: a qué juegan y sus platinos nuevos, según la privacidad de cada uno.
