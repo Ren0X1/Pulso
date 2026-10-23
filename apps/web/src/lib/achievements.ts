@@ -77,3 +77,16 @@ export async function loadGameAchievements(userId: string, gameId: number): Prom
     .map((a) => ({ ...a, unlocked_at: unlocked.has(a.id) ? unlocked.get(a.id) : undefined }))
     .sort((a, b) => Number(b.unlocked_at !== undefined) - Number(a.unlocked_at !== undefined) || (a.global_percent ?? 100) - (b.global_percent ?? 100))
 }
+
+type ProgressCounts = Pick<GameProgress, 'game_id' | 'unlocked' | 'total'>
+
+/** Platino: todos los logros de Steam del juego conseguidos. */
+export function platinumGameIds(rows: ProgressCounts[]): Set<number> {
+  return new Set(rows.filter((r) => r.total > 0 && r.unlocked === r.total).map((r) => r.game_id))
+}
+
+/** Juegos platinados de un jugador; la vista respeta la privacidad de logros de cada uno. */
+export async function loadPlatinums(userId: string): Promise<Set<number>> {
+  const { data } = await supabase!.from('achievement_progress').select('game_id, unlocked, total').eq('user_id', userId)
+  return platinumGameIds((data ?? []) as ProgressCounts[])
+}

@@ -12,7 +12,7 @@ type Entry = Pick<LibraryEntry, 'game_id' | 'status' | 'favorite' | 'game'>
  * Lo que este jugador deja ver de su biblioteca y sus listas. La base de datos aplica la privacidad:
  * si no devuelve filas, puede ser porque no hay o porque no tienes permiso, y la pantalla lo dice así.
  */
-export function ProfileShowcase({ userId, isMe }: { userId: string; isMe: boolean }) {
+export function ProfileShowcase({ userId, isMe, platinums }: { userId: string; isMe: boolean; platinums: Set<number> }) {
   const [games, setGames] = useState<{ rows: Entry[]; total: number } | null>(null)
   const [lists, setLists] = useState<GameList[]>([])
 
@@ -36,10 +36,39 @@ export function ProfileShowcase({ userId, isMe }: { userId: string; isMe: boolea
       .then(({ data }) => setLists((data ?? []) as GameList[]))
   }, [userId])
 
+  const [platinumGames, setPlatinumGames] = useState<Entry['game'][]>([])
+  useEffect(() => {
+    if (platinums.size === 0) return setPlatinumGames([])
+    void supabase!
+      .from('games')
+      .select('id, name, slug, summary, release_date, cover_url, genres, platforms')
+      .in('id', [...platinums])
+      .order('name')
+      .limit(24)
+      .then(({ data }) => setPlatinumGames((data ?? []) as Entry['game'][]))
+  }, [platinums])
+
   if (!games) return null
 
   return (
     <>
+      {platinumGames.length > 0 && (
+        <section className="panel" aria-label="Platinos">
+          <h2 className="panel-title name-row">
+            Platinos <span className="count num">{platinums.size}</span>
+          </h2>
+          <p className="muted kpi-note platinum-note">Juegos con todos sus logros de Steam conseguidos.</p>
+          <ul className="cover-grid">
+            {platinumGames.map((g) => (
+              <li key={g.id} className="cover-card">
+                <Cover game={g} platinum />
+                <span className="cover-name">{g.name}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="panel" aria-label="Biblioteca">
         <div className="panel-title-row">
           <h2 className="panel-title">
@@ -55,7 +84,7 @@ export function ProfileShowcase({ userId, isMe }: { userId: string; isMe: boolea
           <ul className="cover-grid">
             {games.rows.map((e) => (
               <li key={e.game_id} className="cover-card">
-                <Cover game={e.game} />
+                <Cover game={e.game} platinum={platinums.has(e.game_id)} />
                 <span className="cover-name">{e.game.name}</span>
                 <span className="cover-meta">
                   {STATUS_LABELS[e.status]}

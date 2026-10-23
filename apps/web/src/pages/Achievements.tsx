@@ -3,6 +3,7 @@ import { useAuth } from '../lib/auth.tsx'
 import { loadProgress, loadRecentUnlocks, type GameProgress, type UnlockedAchievement } from '../lib/achievements.ts'
 import { formatAgo, rarityLabel } from '../lib/steam.ts'
 import { Cover } from './Cover.tsx'
+import { PlatinumBadge } from './Platinum.tsx'
 import { SyncSteam } from './SyncSteam.tsx'
 
 const percent = (p: GameProgress) => Math.round((p.unlocked / p.total) * 100)
@@ -44,7 +45,7 @@ export function AchievementsPage() {
             <p className="kpi-value num">{progress ? progress.length : '—'}</p>
           </div>
           <div>
-            <p className="kpi-label">Completados al 100 %</p>
+            <p className="kpi-label">Platinos (todos los logros)</p>
             <p className="kpi-value num">{progress ? perfect : '—'}</p>
           </div>
         </div>
@@ -97,7 +98,10 @@ export function AchievementsPage() {
               <li key={p.game_id} className="ach-row">
                 <Cover game={p.game} small />
                 <div className="ach-meta">
-                  <span className="ach-name">{p.game.name}</span>
+                  <span className="ach-name name-row">
+                    {p.game.name}
+                    {p.unlocked === p.total && <PlatinumBadge />}
+                  </span>
                   <div className="bar" role="img" aria-label={`${percent(p)} %`}>
                     <span style={{ width: `${percent(p)}%` }} />
                   </div>

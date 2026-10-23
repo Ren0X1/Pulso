@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { loadGameAchievements, type GameAchievement } from '../lib/achievements.ts'
 import { rarityLabel } from '../lib/steam.ts'
+import { PlatinumBadge } from './Platinum.tsx'
 
 export function GameAchievements({ userId, gameId }: { userId: string; gameId: number }) {
   const [list, setList] = useState<GameAchievement[] | null>(null)
@@ -18,8 +19,15 @@ export function GameAchievements({ userId, gameId }: { userId: string; gameId: n
   const unlocked = list.filter((a) => a.unlocked_at !== undefined).length
   return (
     <div className="game-ach">
-      <p className="field-label num">
-        Logros {unlocked} <span className="muted">/ {list.length}</span>
+      <p className="field-label num name-row">
+        <span>
+          Logros {unlocked} <span className="muted">/ {list.length}</span>
+        </span>
+        {unlocked === list.length && (
+          <span className="platinum-count">
+            <PlatinumBadge /> Platino
+          </span>
+        )}
       </p>
       <div className="bar" role="img" aria-label={`${Math.round((unlocked / list.length) * 100)} %`}>
         <span style={{ width: `${(unlocked / list.length) * 100}%` }} />

@@ -20,6 +20,8 @@ import {
 import { AddGameDialog } from './AddGameDialog.tsx'
 import { EntryDialog } from './EntryDialog.tsx'
 import { Cover } from './Cover.tsx'
+import { PlatinumBadge } from './Platinum.tsx'
+import { loadPlatinums } from '../lib/achievements.ts'
 import { SyncSteam } from './SyncSteam.tsx'
 
 const dateFormat = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -35,11 +37,13 @@ export function LibraryPage() {
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<LibraryEntry | null>(null)
   const [q, setQ] = useState(params.q)
+  const [platinums, setPlatinums] = useState<Set<number>>(new Set())
 
   const reload = useCallback(async () => {
     try {
       setData(await loadLibrary(me, params))
       setTags(await loadMyTags(me))
+      setPlatinums(await loadPlatinums(me))
       setError(false)
     } catch {
       setError(true)
@@ -148,7 +152,7 @@ export function LibraryPage() {
           {data.rows.map((entry) => (
             <li key={entry.game_id}>
               <button type="button" className="cover-card" onClick={() => setEditing(entry)}>
-                <Cover game={entry.game} />
+                <Cover game={entry.game} platinum={platinums.has(entry.game_id)} />
                 <span className="cover-name">{entry.game.name}</span>
                 <span className="cover-meta">
                   {STATUS_LABELS[entry.status]}
@@ -178,6 +182,7 @@ export function LibraryPage() {
                   <button type="button" className="row-game" onClick={() => setEditing(entry)}>
                     <Cover game={entry.game} small />
                     <span>{entry.game.name}</span>
+                    {platinums.has(entry.game_id) && <PlatinumBadge />}
                     {entry.favorite && <Star className="fav" size={12} strokeWidth={1.5} aria-label="Favorito" />}
                   </button>
                 </td>

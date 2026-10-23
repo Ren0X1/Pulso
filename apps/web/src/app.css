@@ -1133,3 +1133,49 @@ a.p-button {
 .ach-list-compact .ach-row {
   align-items: flex-start;
 }
+
+/* ───────── Platino: todos los logros de Steam ───────── */
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.platinum {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--accent);
+}
+.platinum-cover {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.78);
+}
+.platinum-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-control);
+  background: var(--pill-positive-bg);
+  color: var(--pill-positive-ink);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+.cover-wrap {
+  position: relative;
+  display: block;
+}
+.row-game {
+  gap: 8px;
+}
+.platinum-note {
+  margin: -8px 0 16px;
+}
