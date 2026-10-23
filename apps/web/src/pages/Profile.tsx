@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Avatar } from '@pulso/ui'
 import type { Profile as ProfileRow } from '../lib/auth.tsx'
-import { useAuth } from '../lib/auth.tsx'
+import { PROFILE_COLUMNS, useAuth } from '../lib/auth.tsx'
 import { supabase } from '../lib/supabase.ts'
 import { EmptyState } from './EmptyState.tsx'
 import { FriendButton } from './FriendButton.tsx'
 import { ProfileShowcase } from './ProfileShowcase.tsx'
 import { PlatinumCount } from './Platinum.tsx'
+import { ProfileLinks } from './ProfileLinks.tsx'
 import { loadPlatinums } from '../lib/achievements.ts'
 
 const joined = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' })
@@ -24,7 +25,7 @@ export function ProfilePage() {
     setPlatinums(new Set())
     void supabase
       .from('profiles')
-      .select('id, username, avatar_url, banner_url, bio, created_at')
+      .select(PROFILE_COLUMNS)
       .eq('username', username.toLowerCase())
       .maybeSingle()
       .then(({ data }) => {
@@ -47,8 +48,14 @@ export function ProfilePage() {
 
   return (
     <div className="stack">
-      <section className="panel profile-head" aria-label={`Perfil de ${profile.username}`}>
-        <Avatar name={profile.username} src={profile.avatar_url} size={88} />
+      <section className="panel profile-card" aria-label={`Perfil de ${profile.username}`}>
+        <div className="profile-banner" data-empty={profile.banner_url ? undefined : ''}>
+          {profile.banner_url && <img src={profile.banner_url} alt="" />}
+        </div>
+        <div className="profile-head">
+        <span className="profile-avatar">
+          <Avatar name={profile.username} src={profile.avatar_url} size={96} />
+        </span>
         <div className="profile-meta">
           <div className="name-row">
             <h2 className="profile-name">{profile.username}</h2>
@@ -56,6 +63,7 @@ export function ProfilePage() {
           </div>
           <p className="muted">En Pulso desde {joined.format(new Date(profile.created_at))}</p>
           {profile.bio ? <p className="profile-bio">{profile.bio}</p> : isMe && <p className="muted">Aún no has escrito tu bio.</p>}
+          <ProfileLinks links={profile.links} />
         </div>
         {isMe ? (
           <Link className="p-button" data-variant="ghost" to="/ajustes">
@@ -71,9 +79,10 @@ export function ProfilePage() {
             </div>
           )
         )}
+        </div>
       </section>
 
-      <ProfileShowcase userId={profile.id} isMe={isMe} platinums={platinums} />
+      <ProfileShowcase userId={profile.id} isMe={isMe} platinums={platinums} favorites={profile.favorite_game_ids ?? []} />
     </div>
   )
 }

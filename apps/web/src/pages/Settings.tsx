@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth.tsx'
 import { supabase } from '../lib/supabase.ts'
 import { isDesktop } from '../lib/platform.ts'
 import { LauncherSettingsPanel } from './LauncherSettings.tsx'
+import { FavoritesEditor, ImagesEditor, LinksEditor } from './ProfileEditors.tsx'
 
 const desktop = isDesktop()
 
@@ -139,6 +140,27 @@ export function SettingsPage() {
           <p className="muted">Cómo te ven los demás jugadores.</p>
         </div>
         <ProfileForm />
+      </section>
+      <section className="settings-section">
+        <div className="settings-label">
+          <h2>Avatar y banner</h2>
+          <p className="muted">Tus imágenes, en vez de las de Steam. Se recortan y se guardan comprimidas.</p>
+        </div>
+        <ImagesEditor />
+      </section>
+      <section className="settings-section">
+        <div className="settings-label">
+          <h2>Enlaces</h2>
+          <p className="muted">Tu canal de Twitch, YouTube, X o tu web. Aparecen en tu perfil.</p>
+        </div>
+        <LinksEditor />
+      </section>
+      <section className="settings-section">
+        <div className="settings-label">
+          <h2>Juegos favoritos</h2>
+          <p className="muted">Los que quieres que se vean primero en tu perfil.</p>
+        </div>
+        <FavoritesEditor />
       </section>
       <section className="settings-section">
         <div className="settings-label">

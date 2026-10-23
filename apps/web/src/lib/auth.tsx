@@ -1,8 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import type { ProfileLink } from './profile.ts'
 import { newLoginState, parseAuthCallback, type AuthCallbackResult } from './auth-callback.ts'
 import { isDesktop, loginClient } from './platform.ts'
 import { steamLoginUrl, supabase } from './supabase.ts'
+
+export const PROFILE_COLUMNS = 'id, username, avatar_url, banner_url, bio, created_at, links, favorite_game_ids'
 
 export interface Profile {
   id: string
@@ -11,6 +14,8 @@ export interface Profile {
   banner_url: string | null
   bio: string
   created_at: string
+  links: ProfileLink[]
+  favorite_game_ids: number[]
 }
 
 type AuthState =
@@ -35,7 +40,7 @@ export const AuthContext = createContext<AuthContextValue | null>(null)
 async function loadProfile(userId: string): Promise<Profile | null> {
   const { data } = await supabase!
     .from('profiles')
-    .select('id, username, avatar_url, banner_url, bio, created_at')
+    .select(PROFILE_COLUMNS)
     .eq('id', userId)
     .maybeSingle()
   return (data as Profile | null) ?? null

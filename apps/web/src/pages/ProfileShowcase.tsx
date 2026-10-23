@@ -12,7 +12,30 @@ type Entry = Pick<LibraryEntry, 'game_id' | 'status' | 'favorite' | 'game'>
  * Lo que este jugador deja ver de su biblioteca y sus listas. La base de datos aplica la privacidad:
  * si no devuelve filas, puede ser porque no hay o porque no tienes permiso, y la pantalla lo dice así.
  */
-export function ProfileShowcase({ userId, isMe, platinums }: { userId: string; isMe: boolean; platinums: Set<number> }) {
+export function ProfileShowcase({
+  userId,
+  isMe,
+  platinums,
+  favorites,
+}: {
+  userId: string
+  isMe: boolean
+  platinums: Set<number>
+  favorites: number[]
+}) {
+  const [favoriteGames, setFavoriteGames] = useState<Entry['game'][]>([])
+  useEffect(() => {
+    if (favorites.length === 0) return setFavoriteGames([])
+    void supabase!
+      .from('games')
+      .select('id, name, slug, summary, release_date, cover_url, genres, platforms')
+      .in('id', favorites)
+      .then(({ data }) => {
+        // En el orden que eligió el jugador.
+        const byId = new Map(((data ?? []) as Entry['game'][]).map((g) => [g.id, g]))
+        setFavoriteGames(favorites.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : [])))
+      })
+  }, [favorites.join(',')])
   const [games, setGames] = useState<{ rows: Entry[]; total: number } | null>(null)
   const [lists, setLists] = useState<GameList[]>([])
 
@@ -52,6 +75,20 @@ export function ProfileShowcase({ userId, isMe, platinums }: { userId: string; i
 
   return (
     <>
+      {favoriteGames.length > 0 && (
+        <section className="panel" aria-label="Favoritos">
+          <h2 className="panel-title">Favoritos</h2>
+          <ul className="cover-grid cover-grid-row">
+            {favoriteGames.map((g) => (
+              <li key={g.id} className="cover-card">
+                <Cover game={g} platinum={platinums.has(g.id)} />
+                <span className="cover-name">{g.name}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {platinumGames.length > 0 && (
         <section className="panel" aria-label="Platinos">
           <h2 className="panel-title name-row">
