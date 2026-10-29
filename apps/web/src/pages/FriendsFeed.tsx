@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar } from '@pulso/ui'
 import { formatAgo } from '../lib/steam.ts'
+import { useLive, userTopic } from '../lib/live.ts'
 import { feedText, loadFriendsFeed, type FeedEvent } from '../lib/social.ts'
 import { Cover } from './Cover.tsx'
 
@@ -9,9 +10,11 @@ import { Cover } from './Cover.tsx'
 export function FriendsFeed({ me, limit = 8 }: { me: string; limit?: number }) {
   const [events, setEvents] = useState<FeedEvent[] | null>(null)
 
+  const load = useCallback(() => loadFriendsFeed(me, limit).then(setEvents, () => setEvents([])), [me, limit])
   useEffect(() => {
-    void loadFriendsFeed(me, limit).then(setEvents, () => setEvents([]))
-  }, [me, limit])
+    void load()
+  }, [load])
+  useLive([userTopic(me)], load)
 
   return (
     <section className="panel" aria-label="Actividad de amigos">

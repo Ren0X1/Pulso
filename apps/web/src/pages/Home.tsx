@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { Avatar } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
+import { useLive, userTopic } from '../lib/live.ts'
 import { supabase } from '../lib/supabase.ts'
 import { Link } from 'react-router'
 import { countIncoming } from '../lib/friends.ts'
@@ -54,6 +55,8 @@ export function Home() {
       .then(({ data }) => setRecent((data ?? []) as unknown as { game_id: number; game: CatalogGame }[]))
     void countIncoming(me).then(setIncoming)
   }, [state])
+  const me = state.status === 'signed-in' ? state.session.user.id : ''
+  useLive([me && userTopic(me)], () => countIncoming(me).then(setIncoming))
 
   const isPrivate = account?.profile_visibility === 'private'
 

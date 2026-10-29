@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useMatches } from 'react-router'
 import { Activity, Bell, ChartColumn, House, Library, ListChecks, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Avatar, Logo, PulseMark } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
+import { useLive, userTopic } from '../lib/live.ts'
 import { countIncoming } from '../lib/friends.ts'
 import { countUnread } from '../lib/social.ts'
 import { isDesktop } from '../lib/platform.ts'
@@ -60,10 +61,17 @@ export function AppShell() {
   const [incoming, setIncoming] = useState(0)
   const [unread, setUnread] = useState(0)
 
+  const recount = useCallback(async () => {
+    if (!me) return
+    const [friends, notifications] = await Promise.all([countIncoming(me), countUnread()])
+    setIncoming(friends)
+    setUnread(notifications)
+  }, [me])
+
   useEffect(() => {
-    if (me) void countIncoming(me).then(setIncoming)
-    if (me) void countUnread().then(setUnread)
-  }, [me, location.pathname])
+    void recount()
+  }, [recount, location.pathname])
+  useLive([me && userTopic(me)], recount)
 
   return (
     <div className="shell">

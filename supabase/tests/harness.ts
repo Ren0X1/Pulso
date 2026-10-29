@@ -31,6 +31,21 @@ const SUPABASE_BOOTSTRAP = `
     $$ select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $$;
   grant usage on schema storage to anon, authenticated, service_role;
   grant all on storage.objects, storage.buckets to anon, authenticated, service_role;
+
+  -- Realtime: realtime.send() deja el mensaje en realtime.messages y realtime.topic() es el canal al que
+  -- se intenta suscribir el usuario (Supabase lo fija igual, con una variable de la sesión).
+  create schema realtime;
+  create table realtime.messages (
+    id bigserial primary key, topic text not null, extension text not null default 'broadcast',
+    event text, payload jsonb, private boolean
+  );
+  alter table realtime.messages enable row level security;
+  create function realtime.topic() returns text language sql stable as
+    $$ select nullif(current_setting('realtime.topic', true), '') $$;
+  create function realtime.send(payload jsonb, event text, topic text, private boolean default true) returns void
+    language sql as $$ insert into realtime.messages (topic, event, payload, private) values (topic, event, payload, private) $$;
+  grant usage on schema realtime to anon, authenticated, service_role;
+  grant select on realtime.messages to authenticated;
 `
 
 const MIGRATIONS_DIR = join(import.meta.dirname, '..', 'migrations')

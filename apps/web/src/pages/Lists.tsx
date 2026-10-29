@@ -14,6 +14,7 @@ import {
   type SharedList,
 } from '../lib/lists.ts'
 import { Dialog } from './Dialog.tsx'
+import { useLive, userTopic } from '../lib/live.ts'
 
 export function ListsPage() {
   const { state } = useAuth()
@@ -42,6 +43,7 @@ export function ListsPage() {
   useEffect(() => {
     void reload()
   }, [reload])
+  useLive([me && userTopic(me)], reload)
 
   async function submitNew(event: FormEvent) {
     event.preventDefault()

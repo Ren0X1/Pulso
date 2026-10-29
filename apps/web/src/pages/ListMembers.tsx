@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Avatar, Button } from '@pulso/ui'
 import { loadMyFriendships, type PlayerSummary } from '../lib/friends.ts'
 import { addMember, loadMembers, removeMember, ROLE_LABELS, setMemberRole, type ListMember, type ListRole } from '../lib/lists.ts'
+import { listTopic, useLive, userTopic } from '../lib/live.ts'
 
 /** Panel del dueño: a qué amigos invitar a la lista y qué puede hacer cada uno. */
 export function ListMembers({ listId, me }: { listId: string; me: string }) {
@@ -21,6 +22,7 @@ export function ListMembers({ listId, me }: { listId: string; me: string }) {
   useEffect(() => {
     void reload()
   }, [reload])
+  useLive([listTopic(listId), userTopic(me)], reload)
 
   async function act(action: () => Promise<void>) {
     try {

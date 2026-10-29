@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../lib/auth.tsx'
+import { useLive, userTopic } from '../lib/live.ts'
 import type { CatalogGame } from '../lib/library.ts'
 import { formatAgo } from '../lib/steam.ts'
 import { supabase } from '../lib/supabase.ts'
@@ -22,16 +23,21 @@ export function ActivityPage() {
   const me = state.status === 'signed-in' ? state.session.user.id : ''
   const [events, setEvents] = useState<PlayedEvent[] | null>(null)
 
-  useEffect(() => {
-    void supabase!
+  const load = useCallback(async () => {
+    const { data } = await supabase!
       .from('activity_events')
       .select('id, created_at, payload, game:games(name, cover_url)')
       .eq('user_id', me)
       .eq('kind', 'played')
       .order('created_at', { ascending: false })
       .limit(50)
-      .then(({ data }) => setEvents((data ?? []) as unknown as PlayedEvent[]))
+    setEvents((data ?? []) as unknown as PlayedEvent[])
   }, [me])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+  useLive([me && userTopic(me)], load)
 
   if (!events) return <p className="muted">Cargando…</p>
   if (events.length === 0) {

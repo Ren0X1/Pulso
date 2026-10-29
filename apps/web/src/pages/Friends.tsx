@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar, Button, Field } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
+import { useLive, userTopic } from '../lib/live.ts'
 import {
   friendshipWith,
   loadMyFriendships,
@@ -45,6 +46,7 @@ export function FriendsPage() {
   useEffect(() => {
     void reload()
   }, [reload])
+  useLive([me && userTopic(me)], reload)
 
   useEffect(() => {
     const handle = setTimeout(() => {

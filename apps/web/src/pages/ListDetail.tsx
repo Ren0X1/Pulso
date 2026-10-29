@@ -28,6 +28,7 @@ import { ListMembers } from './ListMembers.tsx'
 import { Cover } from './Cover.tsx'
 import { Dialog } from './Dialog.tsx'
 import { EmptyState } from './EmptyState.tsx'
+import { listTopic, useLive } from '../lib/live.ts'
 
 function SharePanel({ listId }: { listId: string }) {
   const [codes, setCodes] = useState<ShareCode[]>([])
@@ -206,6 +207,7 @@ export function ListDetailPage() {
   useEffect(() => {
     void reload()
   }, [reload])
+  useLive([listTopic(id)], reload)
 
   if (list === undefined) return <p className="muted">Cargando…</p>
   if (list === null) return <EmptyState title="Lista no encontrada">No existe o no tienes permiso para verla.</EmptyState>

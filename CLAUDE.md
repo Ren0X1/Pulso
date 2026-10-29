@@ -88,10 +88,11 @@ cada push.
 ## Proyecto de Supabase
 
 - Ref `jaxxqwqyhptgbymlmmwr` · URL `https://jaxxqwqyhptgbymlmmwr.supabase.co` · MCP configurado en `.mcp.json` (aplicar migraciones y desplegar funciones desde Claude Code).
-- Migraciones aplicadas: `init`, `private_functions`, `rls_perf`, `share_codes`, `steam_sync`, `list_members`, `notifications`, `profile_media_stats` (las mismas que `supabase/migrations`).
+- Migraciones aplicadas: `init`, `private_functions`, `rls_perf`, `share_codes`, `steam_sync`, `list_members`, `notifications`, `profile_media_stats`, `live_updates` (las mismas que `supabase/migrations`).
 - Listas: el código crea una **copia**; además el dueño puede invitar a **amigos** como lector o editor (`game_list_members`). Los editores solo tocan los juegos; nombre, visibilidad, códigos y miembros son del dueño.
 - Imágenes de perfil en el bucket público `profile-media` (WebP/JPEG/PNG, 2 MB), una carpeta por usuario (`<uid>/avatar-…`, `<uid>/banner-…`); solo el dueño sube o borra. Vista `achievements_by_month` (security_invoker) para Estadísticas.
 - Botón de descarga del launcher (`apps/web/src/layout/DownloadLauncher.tsx`): lee la última release de la API de GitHub; solo en navegador de escritorio.
+- **Cambios en directo** (`live_updates`): triggers que llaman a `realtime.send` (broadcast privado, evento `changed`, sin datos) en los canales `user:<id>` y `list:<id>`; la política de `realtime.messages` deja escuchar tu canal y el de las listas que la política "ver listas" te deja ver. En la web, `useLive([...canales], recargar)` (`apps/web/src/lib/live.ts`) vuelve a pedir los datos; también al volver a la pestaña o a la ventana del launcher. Si `realtime.messages` no tiene particiones (Realtime sin usar), `realtime.send` falla en silencio: las crea el servicio Realtime en cuanto alguien se conecta.
 - Platino = todos los logros de Steam de un juego (`achievement_progress` con `unlocked = total`).
 - Funciones auxiliares de RLS en el esquema `private` (la API no lo publica). En `public` solo `create_share_code` y `redeem_share_code`, expuestas a propósito y vetadas a `anon` (lo vigila un test).
 - Edge Functions, todas con `verify_jwt = false` y el usuario comprobado en el código (con `verify_jwt` la pasarela rechaza el preflight CORS):
