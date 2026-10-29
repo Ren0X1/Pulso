@@ -94,6 +94,53 @@ export async function logSession(userId: string, playing: Playing, endedAt: numb
   })
 }
 
+/** Dirección pública de la web (el botón "Mi perfil en Pulso" de Discord lleva aquí). */
+export const PULSO_WEB_URL = 'https://pulso-11e.pages.dev'
+
+const hoursFmt = new Intl.NumberFormat('es', { maximumFractionDigits: 0 })
+
+/** La línea de Discord bajo el juego: platino o logros, y horas de Steam. Nada si no hay datos. */
+export function presenceLine({ minutes, unlocked, total }: { minutes: number; unlocked: number; total: number }): string | null {
+  const parts: string[] = []
+  if (total > 0 && unlocked === total) parts.push('🏆 Platino')
+  else if (total > 0) parts.push(`${unlocked}/${total} logros`)
+  if (minutes >= 60) parts.push(`${hoursFmt.format(Math.floor(minutes / 60))} h de juego`)
+  return parts.length ? parts.join(' · ') : null
+}
+
+export interface PresenceInfo {
+  appid: number
+  state: string | null
+  badge: string | null
+  profileUrl: string | null
+}
+
+export const setPresenceInfo = (info: PresenceInfo) => invoke('set_presence_info', { info })
+
+/** Horas y logros de tu cuenta en el juego abierto, y tus platinos, para el estado de Discord. */
+export async function loadPresenceInfo(userId: string, username: string, appid: number): Promise<PresenceInfo> {
+  const [gameId] = await gameIdsForAppIds([appid])
+  const [library, progress] = await Promise.all([
+    gameId
+      ? supabase!.from('user_games').select('playtime_minutes').eq('user_id', userId).eq('game_id', gameId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase!.from('achievement_progress').select('game_id, unlocked, total').eq('user_id', userId),
+  ])
+  const rows = (progress.data ?? []) as { game_id: number; unlocked: number; total: number }[]
+  const game = rows.find((r) => r.game_id === gameId)
+  const platinums = rows.filter((r) => r.total > 0 && r.unlocked === r.total).length
+  return {
+    appid,
+    state: presenceLine({
+      minutes: (library.data as { playtime_minutes: number | null } | null)?.playtime_minutes ?? 0,
+      unlocked: game?.unlocked ?? 0,
+      total: game?.total ?? 0,
+    }),
+    badge: platinums ? `${username} · ${platinums} ${platinums === 1 ? 'platino' : 'platinos'}` : username,
+    profileUrl: `${PULSO_WEB_URL}/u/${encodeURIComponent(username)}`,
+  }
+}
+
 /** Ids de juego de Pulso que corresponden a estos AppID de Steam. */
 export async function gameIdsForAppIds(appids: number[]): Promise<number[]> {
   if (appids.length === 0) return []

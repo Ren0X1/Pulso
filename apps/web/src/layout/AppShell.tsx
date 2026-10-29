@@ -89,7 +89,7 @@ export function AppShell() {
           </span>
           <h1 className="topbar-title">{title}</h1>
         </div>
-        {desktop && me && <NowPlaying userId={me} />}
+        {desktop && me && profile && <NowPlaying userId={me} username={profile.username} />}
         {profile && (
           <div className="topbar-account">
             <NavLink to="/notificaciones" className="icon-button bell" aria-label={unread ? `Notificaciones, ${unread} sin leer` : "Notificaciones"}>

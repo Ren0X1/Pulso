@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { loadLauncherSettings, logSession, nowPlaying, onNowPlaying, setPresence, type Playing } from '../lib/desktop.ts'
+import {
+  loadLauncherSettings,
+  loadPresenceInfo,
+  logSession,
+  nowPlaying,
+  onNowPlaying,
+  setPresence,
+  setPresenceInfo,
+  type Playing,
+} from '../lib/desktop.ts'
 
 function elapsed(startedAt: number, now: number): string {
   const minutes = Math.max(0, Math.floor((now - startedAt) / 60_000))
@@ -10,7 +19,7 @@ function elapsed(startedAt: number, now: number): string {
  * Solo en el launcher: qué juego está abierto (lo detecta Rust mirando los procesos), cuánto llevas,
  * y al cerrarlo la partida queda en tu actividad. También aplica tu preferencia de Discord al arrancar.
  */
-export function NowPlaying({ userId }: { userId: string }) {
+export function NowPlaying({ userId, username }: { userId: string; username: string }) {
   const [playing, setPlaying] = useState<Playing | null>(null)
   const [now, setNow] = useState(Date.now())
   const current = useRef<Playing | null>(null)
@@ -33,6 +42,13 @@ export function NowPlaying({ userId }: { userId: string }) {
       clearInterval(tick)
     }
   }, [userId])
+
+  // Discord: tus logros y horas en ese juego, tus platinos y el enlace a tu perfil.
+  const appid = playing?.appid
+  useEffect(() => {
+    if (!appid) return
+    void loadPresenceInfo(userId, username, appid).then(setPresenceInfo, () => {})
+  }, [userId, username, appid])
 
   if (!playing) return null
   return (

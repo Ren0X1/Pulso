@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { formatBytes, sessionMinutes, steamAppId } from './desktop.ts'
+import { formatBytes, presenceLine, sessionMinutes, steamAppId } from './desktop.ts'
+
+describe('presenceLine', () => {
+  it('logros del juego y horas de Steam', () => {
+    expect(presenceLine({ minutes: 7230, unlocked: 34, total: 50 })).toBe('34/50 logros · 120 h de juego')
+  })
+
+  it('con todos los logros dice platino', () => {
+    expect(presenceLine({ minutes: 600, unlocked: 50, total: 50 })).toBe('🏆 Platino · 10 h de juego')
+  })
+
+  it('sin logros ni una hora jugada no hay línea (Discord pone "Jugando con Pulso")', () => {
+    expect(presenceLine({ minutes: 30, unlocked: 0, total: 0 })).toBeNull()
+    expect(presenceLine({ minutes: 90, unlocked: 0, total: 0 })).toBe('1 h de juego')
+  })
+})
 
 describe('steamAppId', () => {
   it('saca el AppID de Steam de los ids externos del juego', () => {

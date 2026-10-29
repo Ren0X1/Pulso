@@ -14,7 +14,7 @@ use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
 use tauri_plugin_opener::OpenerExt;
 
 use playing::Playing;
-use presence::Presence;
+use presence::{Presence, PresenceInfo};
 use steam::InstalledGame;
 
 /// Cada cuánto se mira qué procesos hay abiertos y cada cuánto se relee la lista de instalados.
@@ -88,6 +88,14 @@ fn set_presence(state: State<'_, AppState>, enabled: bool) {
     let playing = state.playing.lock().unwrap().clone();
     if let Some(presence) = state.presence.lock().unwrap().as_mut() {
         presence.set_enabled(enabled, playing.as_ref());
+    }
+}
+
+#[tauri::command]
+fn set_presence_info(state: State<'_, AppState>, info: PresenceInfo) {
+    let playing = state.playing.lock().unwrap().clone();
+    if let Some(presence) = state.presence.lock().unwrap().as_mut() {
+        presence.set_info(info, playing.as_ref());
     }
 }
 
@@ -238,7 +246,8 @@ pub fn run() {
             launch_game,
             install_game,
             open_game_folder,
-            set_presence
+            set_presence,
+            set_presence_info
         ])
         .on_window_event(|window, event| {
             // Cerrar la ventana deja Pulso en la bandeja: así sigue detectando juegos para Discord.
