@@ -9,6 +9,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/).
 
 ---
 
+## [4.0.1.f0] - 2026-10-29 · 🌍 Pulso, en abierto
+### ✨ Añadido
+- 🌍 **La web ya está publicada** en [pulso.dpdns.org](https://pulso.dpdns.org) (Cloudflare Pages, gratis) y se vuelve a publicar sola con cada versión.
+- 🎧 **Discord renovado**: en la lista de miembros sale solo el juego (*Jugando a Half-Life*); en tu tarjeta, la portada ("Jugando a Half-Life usando Pulso"), tus logros y horas en ese juego o 🏆 *Platino*, tus platinos totales, el tiempo de partida y botones a Steam y a tu perfil de Pulso.
+
+### 🧪 Calidad
+- 🐧 Cada release instala el `.deb` y el AppImage en un Ubuntu limpio y comprueba que Pulso arranca.
+- ⬆️ Probada la actualización automática de punta a punta en Windows (4.0.0 → 4.0.100).
+
 ## [1.1.0.f0] - 2026-10-23 · 🎮 tu biblioteca de verdad
 ### ✨ Añadido
 - 🔄 **Sincronizar con Steam**: importa tus juegos, horas y última partida, y los logros (25 juegos por tanda, empezando por lo que juegas ahora). Si tu perfil o tus detalles de juego son privados, Pulso te dice qué cambiar en Steam en vez de enseñar una biblioteca vacía.

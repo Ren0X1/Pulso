@@ -36,7 +36,7 @@ pnpm --filter desktop dev      # launcher en modo desarrollo (necesita Rust + MS
 pnpm --filter desktop tauri build   # instalador NSIS (Windows) / deb + AppImage (Linux)
 ```
 
-Versiones: Node ≥ 22, pnpm 11, TypeScript 7, Rust estable. Comprobar la documentación antes de usar
+Versiones: Node ≥ 22, pnpm 11, TypeScript 7, Rust estable (rustup + VS Build Tools 2022 con C++; en Git Bash añadir `~/.cargo/bin` al PATH). Comprobar la documentación antes de usar
 APIs de React Router 8, Vite 8, Vitest 5 o TS 7: son versiones nuevas.
 
 ## Supabase (gratis)
@@ -64,12 +64,20 @@ Clave de Steam Web API gratis: https://steamcommunity.com/dev/apikey
 ## Launcher (apps/desktop)
 
 - `src-tauri/src/steam.rs` lee los juegos instalados (`libraryfolders.vdf` + `appmanifest_*.acf`); `playing.rs` detecta el juego abierto (variable `SteamAppId` del proceso o, si no, su carpeta); `presence.rs` es Discord Rich Presence (Application ID `1563105754452328469`); `launch.rs` lanza con parámetros (`steam -applaunch`, sin consola).
-- Comandos: `installed_games`, `now_playing`, `launch_game { appid, args? }`, `install_game`, `open_game_folder`, `set_presence`. Evento `now-playing`.
+- Comandos: `installed_games`, `now_playing`, `launch_game { appid, args? }`, `install_game`, `open_game_folder`, `set_presence`, `set_presence_info { appid, state, badge, profileUrl }` (logros, horas y platinos para Discord; los calcula la web). Evento `now-playing`.
 - Cerrar la ventana deja Pulso en la bandeja. Inicio con el sistema con `--minimized`.
 - Ajustes del launcher en `user_settings.launcher`: `{ discordPresence, launchOptions: { "<appid>": "<parámetros>" } }`.
 - **Probar sin molestar al usuario**: `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333 pnpm --filter desktop dev` y manejar la ventana por CDP; minimizarla después. El usuario usa el PC mientras tanto.
 - **Actualizaciones**: `tauri-plugin-updater` lee `latest.json` de la última GitHub Release. Las versiones se firman con `~/.tauri/pulso.key` (sin contraseña; nunca al repo). En CI va en el secreto `TAURI_SIGNING_PRIVATE_KEY`. Para compilar el instalador en local: `TAURI_SIGNING_PRIVATE_KEY=$(cat ~/.tauri/pulso.key) pnpm --filter desktop tauri build --bundles nsis`.
 - Versión del instalador: `MAJOR.FEATURE.MINOR.fFIX` → semver `MAJOR.FEATURE.(MINOR×100+FIX)`, la calcula `release.yml`.
+
+## Web publicada
+
+- **https://pulso.dpdns.org** (dominio gratuito de DigitalPlat, nameservers delegados en Cloudflare) y `https://pulso-11e.pages.dev`. Proyecto de Cloudflare Pages `pulso` (subida directa, no conectado a Git).
+- `release.yml` → job `web`: compila `apps/web` y publica con wrangler si existe el secreto `CLOUDFLARE_API_TOKEN` (permiso *Cloudflare Pages: Edit*). A mano: `cd apps/web && npx wrangler pages deploy dist --project-name pulso --branch main`.
+- `PULSO_WEB_URL` (`apps/web/src/lib/desktop.ts`) y `PULSO_ICON` (`presence.rs`) apuntan a la web publicada: botón de perfil y logo de Discord (`apps/web/public/discord-icon.png`).
+- Supabase: `PULSO_APP_URL` y *Auth → Site URL* = la web publicada; `localhost:5173` en *Redirect URLs*.
+- `release.yml` → job `linux`: instala el `.deb` y el AppImage de la release en Ubuntu con xvfb y comprueba que arrancan.
 
 ## Versionado
 

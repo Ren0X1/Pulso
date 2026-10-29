@@ -6,7 +6,7 @@
 
 Pulso does not replace Steam — it sits on top of it. The launcher finds your installed games, starts them through Steam, opens their folders and keeps your settings in the cloud; the web lets you show off your profile, compare achievements with friends and share backlog lists with a single code. Everything runs on free tiers. 💸
 
-> 🚧 **Status: phases 1–5 of 6, not public yet.** Everything below works and is tested against a real Steam account, on the web (run locally) and in the Windows launcher. Hosting the web for everyone is the last step. See the [roadmap](#️-roadmap) and [`CHANGELOG.md`](CHANGELOG.md).
+> 🌍 **Live at [pulso.dpdns.org](https://pulso.dpdns.org)** (also [pulso-11e.pages.dev](https://pulso-11e.pages.dev)). Download the launcher for Windows or Linux from the web or from [Releases](https://github.com/Ren0X1/Pulso/releases/latest). See the [roadmap](#️-roadmap) and [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -25,7 +25,7 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 | Integrations | Steam OpenID + Steam Web API (games, playtime, achievements) |
 | Web hosting | Cloudflare Pages |
 | Monorepo | pnpm + Turborepo |
-| CI/CD | GitHub Actions — versioning, releases and desktop installers |
+| CI/CD | GitHub Actions — versioning, releases, desktop installers, Linux smoke test and web deploy |
 | Updates | `tauri-plugin-updater` from GitHub Releases |
 | Discord | Rich Presence over Discord's local IPC (Rust) |
 
@@ -58,7 +58,7 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 - Launches them through Steam, so login, DRM and updates stay with Steam — with your own **launch options** per game.
 - Opens the install folder, shows the size on disk and keeps per-game launch options.
 - 🎮 Knows what you are playing even if you started it from Steam, and logs every session to your activity.
-- 🎧 **Discord Rich Presence**: your Discord status shows the game you are playing, its cover art and session time.
+- 🎧 **Discord Rich Presence**: the member list shows just the game (*Playing Half-Life*); your profile card adds its cover, your achievements and hours in it, your platinum count, the session time and buttons to Steam and your Pulso profile.
 - Settings synced to your account, tray icon, optional start with Windows and signed auto-updates.
 - ⬇️ Installers (Windows `.exe`, Linux `.deb` / `.AppImage`) are attached to every [GitHub Release](https://github.com/Ren0X1/Pulso/releases).
 
@@ -90,7 +90,7 @@ API keys (Steam, IGDB) live only in Supabase Edge Functions — never in the app
 | 3️⃣ Steam | Game and playtime import, achievements | 🟢 Done |
 | 4️⃣ Launcher | Detection, launching, folders, launch options, now-playing detection, Discord Rich Presence, cloud settings, installers, auto-update | 🟢 Done |
 | 5️⃣ Social | Friends' activity, comparisons, notifications | 🟢 Done |
-| 6️⃣ Launch | Tests, security, performance, installers ✅ · public web hosting and error monitoring ⏳ | 🟡 In progress |
+| 6️⃣ Launch | Tests, security, performance, installers, auto-update, public web on Cloudflare Pages | 🟢 Done |
 
 The full design lives in [`docs/superpowers/specs/2026-10-22-pulso-design.md`](docs/superpowers/specs/2026-10-22-pulso-design.md).
 

@@ -227,3 +227,64 @@ jobs:
           releaseName: Pulso v${{ needs.release.outputs.version }}
           args: --bundles ${{ matrix.bundles }}
           includeUpdaterJson: true
+
+  # La web, en Cloudflare Pages (plan gratuito). Sin el secreto CLOUDFLARE_API_TOKEN se salta.
+  web:
+    needs: release
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://jaxxqwqyhptgbymlmmwr.supabase.co
+      VITE_SUPABASE_ANON_KEY: sb_publishable_h23dg0PzLyn3kSBpHPb3Sg_TgvLS863
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: fa71be8ea3ea139bfa7e5a31c5b401a7
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.release.outputs.version }}
+
+      - name: 📦 pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: 🟢 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: 📚 Dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: 🏗️ Build
+        run: pnpm --filter web build
+
+      - name: 🌍 Publicar en Cloudflare Pages
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        working-directory: apps/web
+        run: npx --yes wrangler@4.155.0 pages deploy dist --project-name pulso --branch main --commit-hash "$GITHUB_SHA"
+
+  # Prueba de humo en un Ubuntu limpio: instala el .deb y el AppImage publicados y comprueba
+  # que Pulso arranca y sigue abierto (sin pantalla, con xvfb). timeout devuelve 124 si seguía vivo.
+  linux:
+    needs: [release, desktop]
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: 📥 Descargar los paquetes de la release
+        run: gh release download "v${{ needs.release.outputs.version }}" -R "$GITHUB_REPOSITORY" -p '*.deb' -p '*.AppImage'
+
+      - name: 🧰 Pantalla virtual
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: 📦 .deb
+        run: |
+          sudo apt-get install -y ./*.deb
+          set +e; xvfb-run -a timeout 25 pulso; code=$?; set -e
+          echo "Salida: $code"; test "$code" -eq 124
+
+      - name: 📦 AppImage
+        run: |
+          chmod +x ./*.AppImage
+          set +e; xvfb-run -a timeout 25 ./*.AppImage --appimage-extract-and-run; code=$?; set -e
+          echo "Salida: $code"; test "$code" -eq 124
