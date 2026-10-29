@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   achievementIconUrl,
   becamePlatinum,
+  canContinueRun,
+  hasUnknownAchievements,
   initialStatus,
   mapSchema,
   mapUnlocked,
+  nextAchievementBatch,
   parseOwnedGames,
   pickAchievementGames,
   steamCoverUrl,
@@ -161,5 +164,60 @@ describe('becamePlatinum', () => {
     expect(becamePlatinum(42, 42, 42)).toBe(false)
     expect(becamePlatinum(0, 41, 42)).toBe(false)
     expect(becamePlatinum(0, 0, 0)).toBe(false)
+  })
+})
+
+describe('nextAchievementBatch', () => {
+  const START = new Date('2026-10-29T10:00:00Z')
+
+  it('una sincronización acaba revisando todos los juegos con logros, tanda a tanda', () => {
+    const owned = [...Array.from({ length: 70 }, (_, i) => game(i + 1)), game(999, { has_community_visible_stats: false })]
+    const synced = new Map<number, Date | null>()
+    const seen = new Set<number>()
+    let remaining = Infinity
+    for (let calls = 0; remaining > 0; calls++) {
+      expect(calls).toBeLessThan(10)
+      const next = nextAchievementBatch(owned, synced, START, 30)
+      expect(next.total).toBe(70)
+      for (const g of next.batch) {
+        seen.add(g.appid)
+        synced.set(g.appid, new Date(START.getTime() + 60_000))
+      }
+      remaining = next.remaining
+    }
+    expect(seen.size).toBe(70)
+    expect(seen.has(999)).toBe(false) // sin logros en Steam: no hay nada que revisar
+  })
+
+  it('los revisados antes de empezar esta sincronización se vuelven a revisar', () => {
+    const synced = new Map([[1, new Date('2026-10-28T10:00:00Z')], [2, new Date('2026-10-29T10:05:00Z')]])
+    const next = nextAchievementBatch([game(1), game(2)], synced, START)
+    expect(next.batch.map((g) => g.appid)).toEqual([1])
+    expect(next.remaining).toBe(0)
+  })
+})
+
+describe('canContinueRun', () => {
+  const now = new Date('2026-10-29T10:10:00Z')
+  const run = { user_id: 'u1', status: 'running', started_at: '2026-10-29T10:00:00Z' }
+
+  it('la del propio usuario, en marcha y reciente', () => {
+    expect(canContinueRun(run, 'u1', now)).toBe(true)
+  })
+
+  it('no la de otro, ni una terminada, ni una abandonada hace más de 30 min', () => {
+    expect(canContinueRun(run, 'u2', now)).toBe(false)
+    expect(canContinueRun({ ...run, status: 'ok' }, 'u1', now)).toBe(false)
+    expect(canContinueRun(run, 'u1', new Date('2026-10-29T10:31:00Z'))).toBe(false)
+    expect(canContinueRun(null, 'u1', now)).toBe(false)
+  })
+})
+
+describe('hasUnknownAchievements', () => {
+  it('detecta logros nuevos del juego que Pulso aún no tiene', () => {
+    const player = { playerstats: { achievements: [{ apiname: 'A' }, { apiname: 'DLC_1' }] } }
+    expect(hasUnknownAchievements(player, new Set(['A']))).toBe(true)
+    expect(hasUnknownAchievements(player, new Set(['A', 'DLC_1']))).toBe(false)
+    expect(hasUnknownAchievements(null, new Set())).toBe(false)
   })
 })

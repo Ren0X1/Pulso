@@ -1,9 +1,15 @@
 import { supabase } from './supabase.ts'
 
+/** Una tanda de steam-sync: la biblioteca entera al empezar y los logros de unos cuantos juegos cada vez. */
 export interface SyncResult {
+  run: string
   games: number
   added: number
+  /** Juegos con logros en Steam. */
   achievementGames: number
+  /** De esos, cuántos lleva revisados esta sincronización. */
+  checked: number
+  remaining: number
   unlocked: number
 }
 
@@ -17,6 +23,8 @@ export function syncErrorMessage(failure: SyncFailure): string {
       return 'Steam no comparte tus juegos: pon "Detalles de juego" en Público en la privacidad de tu perfil de Steam.'
     case 'cooldown':
       return `Ya sincronizaste hace poco. Vuelve a intentarlo en ${Math.ceil((failure.retry_after ?? 600) / 60)} min.`
+    case 'run_expired':
+      return 'La sincronización se quedó a medias. Vuelve a sincronizar para terminarla.'
     case 'steam_unavailable':
       return 'Steam no responde ahora mismo. Inténtalo en unos minutos.'
     default:
@@ -24,13 +32,35 @@ export function syncErrorMessage(failure: SyncFailure): string {
   }
 }
 
-export async function syncSteam(): Promise<SyncResult | SyncFailure> {
-  const { data, error } = await supabase!.functions.invoke('steam-sync', { method: 'POST' })
+async function syncBatch(run?: string): Promise<SyncResult | SyncFailure> {
+  const { data, error } = await supabase!.functions.invoke('steam-sync', { method: 'POST', body: run ? { run } : {} })
   if (error) {
     const body = await (error as { context?: Response }).context?.json?.().catch(() => null)
     return (body as SyncFailure | null) ?? { error: 'server_error' }
   }
   return data as SyncResult
+}
+
+/** Junta una tanda con lo acumulado: los logros conseguidos se suman; los nuevos solo los cuenta la primera. */
+export function mergeSync(total: SyncResult | null, batch: SyncResult): SyncResult {
+  return total ? { ...batch, added: total.added, unlocked: total.unlocked + batch.unlocked } : batch
+}
+
+/** Sincroniza todo: pide tandas hasta que no quedan juegos por revisar, avisando del progreso. */
+export async function syncSteam(
+  onProgress?: (progress: SyncResult) => void,
+  batch: (run?: string) => Promise<SyncResult | SyncFailure> = syncBatch,
+): Promise<SyncResult | SyncFailure> {
+  let total: SyncResult | null = null
+  // Con 30 juegos por tanda, 200 tandas son 6000 juegos con logros: de sobra, y nunca un bucle infinito.
+  for (let i = 0; i < 200; i++) {
+    const res = await batch(total?.run)
+    if ('error' in res) return res
+    total = mergeSync(total, res)
+    onProgress?.(total)
+    if (res.remaining === 0) return total
+  }
+  return { error: 'server_error' }
 }
 
 export interface LastSync {

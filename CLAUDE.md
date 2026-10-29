@@ -98,6 +98,6 @@ cada push.
 - Edge Functions, todas con `verify_jwt = false` y el usuario comprobado en el código (con `verify_jwt` la pasarela rechaza el preflight CORS):
   - `auth-steam` — login con Steam.
   - `catalog` — búsqueda en IGDB con caché en `games`; completa los juegos importados de Steam en vez de duplicarlos.
-  - `steam-sync` — importa biblioteca, horas y logros (25 juegos con logros por tanda, una vez cada 10 min).
+  - `steam-sync` — importa **todo**: biblioteca y horas en la primera llamada y los logros de todos los juegos en tandas de 30 (`POST { run }` continúa la sincronización; la web encadena las tandas y enseña el progreso). Una sincronización nueva cada 10 min; una a medias caduca a los 30. Si un juego añade logros, se relee su lista.
 - Secretos (*Edge Functions → Secrets* en el panel; guardarlos desde el MCP está desactivado por Supabase): `STEAM_API_KEY`, `PULSO_APP_URL`, `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`.
 - Al desplegar una función por MCP hay que subir también sus ficheros de `_shared/` con nombre `../_shared/<fichero>`.

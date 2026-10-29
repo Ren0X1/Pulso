@@ -8,6 +8,7 @@ export function SyncSteam({ onSynced }: { onSynced?: () => void }) {
   const [last, setLast] = useState<LastSync | null | undefined>(undefined)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<SyncResult | null>(null)
+  const [progress, setProgress] = useState<SyncResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -18,8 +19,16 @@ export function SyncSteam({ onSynced }: { onSynced?: () => void }) {
     setBusy(true)
     setError(null)
     setResult(null)
-    const res = await syncSteam()
+    setProgress(null)
+    let first = true
+    const res = await syncSteam((p) => {
+      // Tras la primera tanda la biblioteca y las horas ya están completas: se enseñan sin esperar a los logros.
+      if (first && p.remaining > 0) onSynced?.()
+      first = false
+      setProgress(p)
+    })
     setBusy(false)
+    setProgress(null)
     if ('error' in res) setError(syncErrorMessage(res))
     else {
       setResult(res)
@@ -33,11 +42,13 @@ export function SyncSteam({ onSynced }: { onSynced?: () => void }) {
       <div className="sync-row">
         <Button variant="ghost" busy={busy} onClick={() => void run()}>
           <RefreshCw size={14} strokeWidth={1.5} aria-hidden="true" className={busy ? 'spin' : undefined} />
-          {busy ? 'Importando de Steam…' : 'Sincronizar con Steam'}
+          {busy ? 'Sincronizando con Steam…' : 'Sincronizar con Steam'}
         </Button>
         <span className="muted sync-when">
           {busy
-            ? 'Puede tardar un minuto con bibliotecas grandes.'
+            ? progress
+              ? `Revisando logros: ${progress.checked} de ${progress.achievementGames} juegos…`
+              : 'Importando tu biblioteca y tus horas…'
             : last === undefined
               ? ' '
               : last === null
@@ -52,7 +63,7 @@ export function SyncSteam({ onSynced }: { onSynced?: () => void }) {
       <div aria-live="polite">
         {result && (
           <p className="sync-result num">
-            {result.games} juegos en Steam · {result.added} nuevos en tu biblioteca · logros revisados en {result.achievementGames}{' '}
+            {result.games} juegos en Steam · {result.added} nuevos en tu biblioteca · logros revisados en {result.checked}{' '}
             juegos ({result.unlocked} conseguidos)
           </p>
         )}

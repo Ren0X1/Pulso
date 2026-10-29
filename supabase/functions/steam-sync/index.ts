@@ -1,15 +1,21 @@
 // Edge Function: importar de Steam la biblioteca, las horas y los logros del usuario.
-//   POST → { games, added, achievementGames, unlocked } · 429 { error: 'cooldown', retry_after }
+// Una sincronización revisa los logros de TODOS los juegos, en tandas (los límites de las Edge Functions
+// gratuitas no dan para cientos de juegos en una sola llamada):
+//   POST {}            → empieza: biblioteca y horas completas + la primera tanda de logros
+//   POST { run: id }   → la siguiente tanda de esa sincronización
+//   → { run, games, added, achievementGames, checked, remaining, unlocked } · 429 { error: 'cooldown', retry_after }
 // La lógica que decide qué importar está en _shared/steam.ts y tiene tests.
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0'
 import {
   becamePlatinum,
+  canContinueRun,
+  hasUnknownAchievements,
   initialStatus,
   mapSchema,
   mapUnlocked,
+  nextAchievementBatch,
   parseOwnedGames,
-  pickAchievementGames,
   steamCoverUrl,
   syncCooldown,
   type OwnedGame,
@@ -55,13 +61,28 @@ async function pool<T>(items: T[], limit: number, task: (item: T) => Promise<voi
 const chunk = <T,>(list: T[], size: number) =>
   Array.from({ length: Math.ceil(list.length / size) }, (_, i) => list.slice(i * size, i * size + size))
 
-async function importGames(admin: SupabaseClient, userId: string, owned: OwnedGame[]) {
-  const now = new Date()
+async function gameIdsByApp(admin: SupabaseClient, owned: OwnedGame[]) {
   const gameIdByApp = new Map<number, number>()
   for (const part of chunk(owned.map((g) => String(g.appid)), 200)) {
     const { data } = await admin.from('game_external_ids').select('game_id, external_id').eq('source', 'steam').in('external_id', part)
     for (const row of data ?? []) gameIdByApp.set(Number(row.external_id), row.game_id)
   }
+  return gameIdByApp
+}
+
+/** Cuándo se revisaron por última vez los logros de cada juego (por AppID). */
+function syncedAtByApp(owned: OwnedGame[], gameIdByApp: Map<number, number>, have: Map<number, string | null>) {
+  return new Map(
+    owned.filter((g) => gameIdByApp.has(g.appid)).map((g) => {
+      const at = have.get(gameIdByApp.get(g.appid)!)
+      return [g.appid, at ? new Date(at) : null] as const
+    }),
+  )
+}
+
+async function importGames(admin: SupabaseClient, userId: string, owned: OwnedGame[]) {
+  const now = new Date()
+  const gameIdByApp = await gameIdsByApp(admin, owned)
 
   const missing = owned.filter((g) => !gameIdByApp.has(g.appid))
   for (const part of chunk(missing, 200)) {
@@ -104,31 +125,44 @@ async function importGames(admin: SupabaseClient, userId: string, owned: OwnedGa
     if (error) throw new Error(`user_games update: ${error.code}`)
   }
 
-  const syncedAt = new Map(owned.map((g) => {
-    const at = have.get(gameIdByApp.get(g.appid)!)
-    return [g.appid, at ? new Date(at) : null] as const
-  }))
-  return { gameIdByApp, added: fresh.length, syncedAt }
+  return { gameIdByApp, added: fresh.length, syncedAt: syncedAtByApp(owned, gameIdByApp, have) }
+}
+
+/** Para continuar una sincronización: los ids de Pulso de los juegos y cuándo se revisaron sus logros. */
+async function knownGames(admin: SupabaseClient, userId: string, owned: OwnedGame[]) {
+  const gameIdByApp = await gameIdsByApp(admin, owned)
+  const { data } = await admin.from('user_games').select('game_id, achievements_synced_at').eq('user_id', userId)
+  const have = new Map((data ?? []).map((r) => [r.game_id as number, r.achievements_synced_at as string | null]))
+  // Un juego comprado a mitad de la sincronización aún no tiene id: entra en la próxima.
+  const ready = owned.filter((g) => gameIdByApp.has(g.appid))
+  return { gameIdByApp, added: 0, owned: ready, syncedAt: syncedAtByApp(ready, gameIdByApp, have) }
+}
+
+/** Lista de logros del juego (nombres, iconos, rareza) desde Steam, guardada para todos los jugadores. */
+async function loadSchema(admin: SupabaseClient, game: OwnedGame, gameId: number) {
+  const [schema, global] = await Promise.all([
+    steam('ISteamUserStats/GetSchemaForGame/v2/', { appid: game.appid, l: 'spanish' }),
+    steam('ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/', { gameid: game.appid }),
+  ])
+  const rows = mapSchema(gameId, schema, global)
+  if (!rows.length) return []
+  await admin.from('achievements').upsert(rows, { onConflict: 'game_id,source,api_name' })
+  const { data } = await admin.from('achievements').select('id, api_name').eq('game_id', gameId)
+  return data ?? []
 }
 
 async function syncAchievements(admin: SupabaseClient, userId: string, steamId: string, games: OwnedGame[], gameIdByApp: Map<number, number>) {
   let unlocked = 0
-  await pool(games, 5, async (game) => {
+  await pool(games, 6, async (game) => {
     const gameId = gameIdByApp.get(game.appid)!
     let { data: known } = await admin.from('achievements').select('id, api_name').eq('game_id', gameId)
-    if (!known?.length) {
-      const [schema, global] = await Promise.all([
-        steam('ISteamUserStats/GetSchemaForGame/v2/', { appid: game.appid, l: 'spanish' }),
-        steam('ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/', { gameid: game.appid }),
-      ])
-      const rows = mapSchema(gameId, schema, global)
-      if (rows.length) {
-        const { data } = await admin.from('achievements').upsert(rows, { onConflict: 'game_id,source,api_name' }).select('id, api_name')
-        known = data
-      }
-    }
+    if (!known?.length) known = await loadSchema(admin, game, gameId)
     if (known?.length) {
       const player = await steam('ISteamUserStats/GetPlayerAchievements/v1/', { steamid: steamId, appid: game.appid })
+      // El juego ha añadido logros (un DLC, una actualización) desde que se guardó su lista: se relee.
+      if (hasUnknownAchievements(player, new Set(known.map((a) => a.api_name as string)))) {
+        known = await loadSchema(admin, game, gameId)
+      }
       const ids = new Map(known.map((a) => [a.api_name as string, a.id as number]))
       const rows = mapUnlocked(userId, player, ids)
       if (rows.length) {
@@ -178,50 +212,88 @@ Deno.serve(async (req) => {
   if (!account) return json({ error: 'no_steam_account' }, 400)
   const steamId = account.external_user_id as string
 
-  const { data: last } = await admin
-    .from('sync_runs')
-    .select('started_at')
-    .eq('user_id', user.id)
-    .order('started_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  const wait = syncCooldown(last ? new Date(last.started_at) : null, new Date())
-  if (wait > 0) return json({ error: 'cooldown', retry_after: wait }, 429)
+  const body = (await req.json().catch(() => ({}))) as { run?: unknown }
+  const continuing = typeof body?.run === 'string' ? body.run : null
+  const now = new Date()
 
-  const { data: run } = await admin.from('sync_runs').insert({ user_id: user.id, platform: 'steam' }).select('id').single()
+  let run: { id: string; started_at: string }
+  if (continuing) {
+    const { data } = await admin.from('sync_runs').select('id, user_id, status, started_at').eq('id', continuing).maybeSingle()
+    if (!canContinueRun(data, user.id, now)) return json({ error: 'run_expired' }, 409)
+    run = data!
+  } else {
+    const { data: last } = await admin
+      .from('sync_runs')
+      .select('started_at')
+      .eq('user_id', user.id)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const wait = syncCooldown(last ? new Date(last.started_at) : null, now)
+    if (wait > 0) return json({ error: 'cooldown', retry_after: wait }, 429)
+    // Una sincronización anterior que se quedó a medias (se cerró la app) ya no va a continuar.
+    await admin
+      .from('sync_runs')
+      .update({ status: 'error', error: 'interrupted', finished_at: now.toISOString() })
+      .eq('user_id', user.id)
+      .eq('status', 'running')
+    const { data } = await admin.from('sync_runs').insert({ user_id: user.id, platform: 'steam' }).select('id, started_at').single()
+    run = data!
+  }
   const finish = (status: 'ok' | 'error', error: string | null = null) =>
-    admin.from('sync_runs').update({ status, error, finished_at: new Date().toISOString() }).eq('id', run!.id)
+    admin.from('sync_runs').update({ status, error, finished_at: new Date().toISOString() }).eq('id', run.id)
 
   try {
-    const summary = (await steam('ISteamUser/GetPlayerSummaries/v2/', { steamids: steamId })) as {
-      response?: { players?: { personaname: string; avatarfull?: string; communityvisibilitystate?: number }[] }
-    } | null
-    const player = summary?.response?.players?.[0]
-    if (!player) throw new SyncError('steam_unavailable')
-    const visible = player.communityvisibilitystate === 3
-    await admin
-      .from('linked_accounts')
-      .update({ display_name: player.personaname, avatar_url: player.avatarfull ?? null, profile_visibility: visible ? 'public' : 'private' })
-      .eq('user_id', user.id)
-      .eq('platform', 'steam')
-    if (!visible) throw new SyncError('profile_private')
+    if (!continuing) {
+      const summary = (await steam('ISteamUser/GetPlayerSummaries/v2/', { steamids: steamId })) as {
+        response?: { players?: { personaname: string; avatarfull?: string; communityvisibilitystate?: number }[] }
+      } | null
+      const player = summary?.response?.players?.[0]
+      if (!player) throw new SyncError('steam_unavailable')
+      const visible = player.communityvisibilitystate === 3
+      await admin
+        .from('linked_accounts')
+        .update({ display_name: player.personaname, avatar_url: player.avatarfull ?? null, profile_visibility: visible ? 'public' : 'private' })
+        .eq('user_id', user.id)
+        .eq('platform', 'steam')
+      if (!visible) throw new SyncError('profile_private')
+    }
 
     const parsed = parseOwnedGames(
       await steam('IPlayerService/GetOwnedGames/v1/', { steamid: steamId, include_appinfo: 1, include_played_free_games: 1 }),
     )
     if (!parsed.ok) throw new SyncError(parsed.error)
 
-    const { gameIdByApp, added, syncedAt } = await importGames(admin, user.id, parsed.games)
-    const batch = pickAchievementGames(parsed.games, syncedAt)
-    const unlocked = await syncAchievements(admin, user.id, steamId, batch, gameIdByApp)
+    // La biblioteca y las horas, completas, al empezar; en las tandas siguientes basta con saber los ids.
+    let owned = parsed.games
+    let state
+    if (continuing) {
+      const known = await knownGames(admin, user.id, owned)
+      owned = known.owned
+      state = known
+    } else {
+      state = await importGames(admin, user.id, owned)
+    }
+    const { batch, total, remaining } = nextAchievementBatch(owned, state.syncedAt, new Date(run.started_at))
+    const unlocked = await syncAchievements(admin, user.id, steamId, batch, state.gameIdByApp)
 
-    await admin
-      .from('linked_accounts')
-      .update({ last_synced_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-      .eq('platform', 'steam')
-    await finish('ok')
-    return json({ games: parsed.games.length, added, achievementGames: batch.length, unlocked })
+    if (remaining === 0) {
+      await admin
+        .from('linked_accounts')
+        .update({ last_synced_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('platform', 'steam')
+      await finish('ok')
+    }
+    return json({
+      run: run.id,
+      games: parsed.games.length,
+      added: state.added,
+      achievementGames: total,
+      checked: total - remaining,
+      remaining,
+      unlocked,
+    })
   } catch (err) {
     const code = err instanceof SyncError ? err.code : 'server_error'
     // Solo el código: nunca datos del usuario en los logs.

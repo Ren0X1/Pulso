@@ -42,6 +42,47 @@ export function initialStatus(game: OwnedGame, now: Date): 'playing' | 'backlog'
   return recent && (game.playtime_2weeks ?? 0) > 0 ? 'playing' : 'backlog'
 }
 
+/** Una sincronización revisa los logros de todos los juegos, en tandas de este tamaño (una llamada cada una). */
+export const ACHIEVEMENT_BATCH = 30
+/** Una sincronización a medias que no continúa en este tiempo se da por abandonada. */
+export const RUN_EXPIRES_MINUTES = 30
+
+/**
+ * La siguiente tanda de una sincronización completa: los juegos con logros que aún no se han revisado desde
+ * que empezó (`since`), en el orden de pickAchievementGames, y cuántos quedarán después de esta tanda.
+ */
+export function nextAchievementBatch(
+  owned: OwnedGame[],
+  syncedAt: Map<number, Date | null>,
+  since: Date,
+  limit = ACHIEVEMENT_BATCH,
+): { batch: OwnedGame[]; total: number; remaining: number } {
+  const withStats = owned.filter((g) => g.has_community_visible_stats)
+  const pending = withStats.filter((g) => {
+    const at = syncedAt.get(g.appid)
+    return !at || at < since
+  })
+  // Ya revisados en esta sincronización o no, el orden es el de siempre: recientes, nunca revisados, más antiguos.
+  const batch = pickAchievementGames(pending, syncedAt, limit)
+  return { batch, total: withStats.length, remaining: pending.length - batch.length }
+}
+
+/** Una tanda que continúa una sincronización: solo si es del mismo usuario, sigue en marcha y no ha caducado. */
+export function canContinueRun(run: { user_id: string; status: string; started_at: string } | null, userId: string, now: Date) {
+  return (
+    !!run &&
+    run.user_id === userId &&
+    run.status === 'running' &&
+    now.getTime() - new Date(run.started_at).getTime() < RUN_EXPIRES_MINUTES * 60_000
+  )
+}
+
+/** Logros que el jugador tiene en Steam y Pulso aún no conoce (el juego ha añadido logros): hay que releer la lista. */
+export function hasUnknownAchievements(player: unknown, known: Set<string>): boolean {
+  const list = (player as { playerstats?: { achievements?: { apiname: string }[] } } | null)?.playerstats?.achievements ?? []
+  return list.some((a) => !known.has(a.apiname))
+}
+
 /** Qué juegos revisar en esta tanda: recientes, luego nunca revisados, luego los que más hace que se revisaron. */
 export function pickAchievementGames(
   owned: OwnedGame[],
