@@ -6,7 +6,7 @@
 
 Pulso does not replace Steam — it sits on top of it. The launcher finds your installed games, starts them through Steam, opens their folders and keeps your settings in the cloud; the web lets you show off your profile, compare achievements with friends and share backlog lists with a single code. Everything runs on free tiers. 💸
 
-> 🌍 **Live at [pulso.dpdns.org](https://pulso.dpdns.org)** (also [pulso-11e.pages.dev](https://pulso-11e.pages.dev)). Download the launcher for Windows or Linux from the web or from [Releases](https://github.com/Ren0X1/Pulso/releases/latest). See the [roadmap](#️-roadmap) and [`CHANGELOG.md`](CHANGELOG.md).
+> 🌍 **Live at [pulsonetwork.eu](https://pulsonetwork.eu).** Download the launcher for Windows or Linux from the web or from [Releases](https://github.com/Ren0X1/Pulso/releases/latest). See the [roadmap](#️-roadmap) and [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

@@ -73,7 +73,7 @@ Clave de Steam Web API gratis: https://steamcommunity.com/dev/apikey
 
 ## Web publicada
 
-- **https://pulso.dpdns.org** (dominio gratuito de DigitalPlat, nameservers delegados en Cloudflare) y `https://pulso-11e.pages.dev`. Proyecto de Cloudflare Pages `pulso` (subida directa, no conectado a Git).
+- **https://pulsonetwork.eu** (y `www.`): dominio comprado en Hostinger con los nameservers en Cloudflare. Proyecto de Cloudflare Pages `pulso` (subida directa, no conectado a Git), también en `https://pulso-11e.pages.dev`. Los dominios personalizados se añaden desde el panel (*Custom domains*): así Cloudflare crea el CNAME; por la API no lo crea.
 - `release.yml` → job `web`: compila `apps/web` y publica con wrangler si existe el secreto `CLOUDFLARE_API_TOKEN` (permiso *Cloudflare Pages: Edit*). A mano: `cd apps/web && npx wrangler pages deploy dist --project-name pulso --branch main`.
 - `PULSO_WEB_URL` (`apps/web/src/lib/desktop.ts`) y `PULSO_ICON` (`presence.rs`) apuntan a la web publicada: botón de perfil y logo de Discord (`apps/web/public/discord-icon.png`).
 - Supabase: `PULSO_APP_URL` y *Auth → Site URL* = la web publicada; `localhost:5173` en *Redirect URLs*.

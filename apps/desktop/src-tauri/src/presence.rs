@@ -11,7 +11,7 @@ use crate::playing::Playing;
 const DISCORD_APP_ID: &str = "1563105754452328469";
 
 /// Logo pequeño junto a la portada (Discord no acepta SVG: va en PNG en la web publicada).
-const PULSO_ICON: &str = "https://pulso-11e.pages.dev/discord-icon.png";
+const PULSO_ICON: &str = "https://pulsonetwork.eu/discord-icon.png";
 
 /// Lo que sabe la interfaz y Rust no (horas y logros de la cuenta). Solo se usa si es del juego en curso.
 #[derive(Debug, Clone, Default, Deserialize)]

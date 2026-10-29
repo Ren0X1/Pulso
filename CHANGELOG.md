@@ -11,7 +11,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/).
 
 ## [4.0.1.f0] - 2026-10-29 · 🌍 Pulso, en abierto
 ### ✨ Añadido
-- 🌍 **La web ya está publicada** en [pulso.dpdns.org](https://pulso.dpdns.org) (Cloudflare Pages, gratis) y se vuelve a publicar sola con cada versión.
+- 🌍 **La web ya está publicada** en [pulsonetwork.eu](https://pulsonetwork.eu) (Cloudflare Pages, gratis) y se vuelve a publicar sola con cada versión.
 - 🎧 **Discord renovado**: en la lista de miembros sale solo el juego (*Jugando a Half-Life*); en tu tarjeta, la portada ("Jugando a Half-Life usando Pulso"), tus logros y horas en ese juego o 🏆 *Platino*, tus platinos totales, el tiempo de partida y botones a Steam y a tu perfil de Pulso.
 
 ### 🧪 Calidad

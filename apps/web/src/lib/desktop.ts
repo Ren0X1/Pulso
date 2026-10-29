@@ -95,7 +95,7 @@ export async function logSession(userId: string, playing: Playing, endedAt: numb
 }
 
 /** Dirección pública de la web (el botón "Mi perfil en Pulso" de Discord lleva aquí). */
-export const PULSO_WEB_URL = 'https://pulso-11e.pages.dev'
+export const PULSO_WEB_URL = 'https://pulsonetwork.eu'
 
 const hoursFmt = new Intl.NumberFormat('es', { maximumFractionDigits: 0 })
 
