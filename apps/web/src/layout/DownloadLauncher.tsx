@@ -14,7 +14,9 @@ export function DownloadLauncher() {
       coarsePointer: window.matchMedia('(pointer: coarse)').matches,
     })
     if (!offer) return
-    void latestReleaseAssets().then((assets) => setDownload(launcherDownload(navigator.userAgent, assets)), () => {})
+    void latestReleaseAssets()
+      .catch(() => [])
+      .then((assets) => setDownload(launcherDownload(navigator.userAgent, assets)))
   }, [])
 
   if (!download) return null

@@ -17,11 +17,15 @@ export function shouldOfferLauncher({ inLauncher, ua, coarsePointer }: { inLaunc
   return !inLauncher && !MOBILE.test(ua) && !coarsePointer
 }
 
+const RELEASES_PAGE = 'https://github.com/Ren0X1/Pulso/releases/latest'
+
 export function launcherDownload(ua: string, assets: ReleaseAsset[]): LauncherDownload | null {
   const find = (re: RegExp) => assets.find((a) => re.test(a.name))?.browser_download_url
+  // Si la API de GitHub no contesta (límite de peticiones) el botón sigue ahí, con la página de la release.
+  const fallback = [{ label: 'Descargar', url: RELEASES_PAGE }]
   if (/Windows/i.test(ua)) {
     const exe = find(/-setup\.exe$/)
-    return exe ? { os: 'Windows', files: [{ label: 'Descargar', url: exe }] } : null
+    return { os: 'Windows', files: exe ? [{ label: 'Descargar', url: exe }] : fallback }
   }
   if (/Linux|X11/i.test(ua) && !/Android/i.test(ua)) {
     const appImage = find(/\.AppImage$/)
@@ -30,7 +34,7 @@ export function launcherDownload(ua: string, assets: ReleaseAsset[]): LauncherDo
       ...(appImage ? [{ label: 'Descargar AppImage', url: appImage }] : []),
       ...(deb ? [{ label: '.deb', url: deb }] : []),
     ]
-    return files.length ? { os: 'Linux', files } : null
+    return { os: 'Linux', files: files.length ? files : fallback }
   }
   return null
 }

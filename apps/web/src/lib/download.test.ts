@@ -50,7 +50,9 @@ describe('launcherDownload', () => {
     expect(launcherDownload(MAC, ASSETS)).toBeNull()
   })
 
-  it('sin instaladores en la release, nada', () => {
-    expect(launcherDownload(WIN, [{ name: 'latest.json', browser_download_url: 'x' }])).toBeNull()
+  it('si GitHub no contesta o falta el instalador, enlaza a la página de la última versión', () => {
+    const page = { label: 'Descargar', url: 'https://github.com/Ren0X1/Pulso/releases/latest' }
+    expect(launcherDownload(WIN, [])).toEqual({ os: 'Windows', files: [page] })
+    expect(launcherDownload(LINUX, [{ name: 'latest.json', browser_download_url: 'x' }])).toEqual({ os: 'Linux', files: [page] })
   })
 })
