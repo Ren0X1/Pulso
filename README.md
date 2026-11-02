@@ -40,6 +40,7 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 - Three separate facts per game: **you own it**, **it is installed**, **Pulso can launch it**.
 
 ### 🏆 Achievements and stats
+- 🔄 **Full Steam sync** of your whole library and every achievement, in batches that keep running on the server even if you close Pulso, with live progress.
 - Real Steam achievements with global rarity, progress per game and recent unlocks.
 - 🏆 **Platinums**: games with every Steam achievement get a badge on their cover, and your profile shows how many you have.
 - 📊 **Stats page**: hours played, unplayed games, most played, library by status and achievements per month.
@@ -50,6 +51,7 @@ Pulso does not replace Steam — it sits on top of it. The launcher finds your i
 - Friend requests, friends' activity, games in common and side-by-side comparisons.
 - 🔗 **Shareable lists**: share a backlog with a code like `PX7K-2M9Q-RT`; whoever loads it gets their own copy.
 - 🤝 **Shared lists**: invite friends to the same list as viewers or editors.
+- 🛡️ **Admin panel** for the people who run Pulso: app totals, every user's sync status, force or stop a sync and grant admin access to others.
 - 🔔 Notifications for friend requests, accepted requests and list invites.
 
 ### 🖥️ Desktop launcher

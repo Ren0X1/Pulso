@@ -1,28 +1,23 @@
-import { describe, expect, it, vi } from 'vitest'
-import { formatAgo, rarityLabel, syncErrorMessage, syncSteam, type SyncResult } from './steam.ts'
+import { describe, expect, it } from 'vitest'
+import { formatAgo, isStalled, rarityLabel, syncErrorMessage, syncProgressText, syncSummaryText } from './steam.ts'
 
-describe('syncSteam', () => {
-  const tanda = (extra: Partial<SyncResult>): SyncResult => ({
-    run: 'r1', games: 382, added: 0, achievementGames: 70, checked: 0, remaining: 0, unlocked: 0, ...extra,
+describe('progreso de la sincronización', () => {
+  it('primero la biblioteca, luego los logros juego a juego', () => {
+    expect(syncProgressText({ games: null, total: null, checked: 0 })).toBe('Importando tu biblioteca y tus horas…')
+    expect(syncProgressText({ games: 385, total: 300, checked: 90 })).toBe('Revisando logros: 90 de 300 juegos…')
   })
 
-  it('pide tandas hasta revisar todos los juegos, continuando la misma sincronización', async () => {
-    const batch = vi
-      .fn()
-      .mockResolvedValueOnce(tanda({ added: 5, checked: 30, remaining: 40, unlocked: 100 }))
-      .mockResolvedValueOnce(tanda({ added: 0, checked: 60, remaining: 10, unlocked: 50 }))
-      .mockResolvedValueOnce(tanda({ added: 0, checked: 70, remaining: 0, unlocked: 7 }))
-    const progress: number[] = []
-    const res = await syncSteam((p) => progress.push(p.checked), batch)
-    expect(batch.mock.calls.map((c) => c[0])).toEqual([undefined, 'r1', 'r1'])
-    expect(progress).toEqual([30, 60, 70])
-    expect(res).toEqual(tanda({ added: 5, checked: 70, remaining: 0, unlocked: 157 }))
+  it('resume una sincronización terminada', () => {
+    expect(syncSummaryText({ games: 385, added: 3, checked: 300, unlocked: 40123 })).toBe(
+      '385 juegos en Steam · 3 nuevos en tu biblioteca · logros revisados en 300 juegos (40123 conseguidos)',
+    )
   })
 
-  it('si una tanda falla, para y devuelve el error', async () => {
-    const batch = vi.fn().mockResolvedValueOnce(tanda({ checked: 30, remaining: 40 })).mockResolvedValueOnce({ error: 'steam_unavailable' })
-    expect(await syncSteam(undefined, batch)).toEqual({ error: 'steam_unavailable' })
-    expect(batch).toHaveBeenCalledTimes(2)
+  it('una sincronización en marcha que lleva 90 s sin avanzar está atascada (la web relanza la tanda)', () => {
+    const now = new Date('2026-11-02T12:00:00Z')
+    expect(isStalled({ status: 'running', updated_at: '2026-11-02T11:59:00Z' }, now)).toBe(false)
+    expect(isStalled({ status: 'running', updated_at: '2026-11-02T11:58:00Z' }, now)).toBe(true)
+    expect(isStalled({ status: 'ok', updated_at: '2026-11-02T10:00:00Z' }, now)).toBe(false)
   })
 })
 
@@ -53,5 +48,13 @@ describe('syncErrorMessage', () => {
     expect(syncErrorMessage({ error: 'games_private' })).toMatch(/Detalles de juego/)
     expect(syncErrorMessage({ error: 'cooldown', retry_after: 420 })).toBe('Ya sincronizaste hace poco. Vuelve a intentarlo en 7 min.')
     expect(syncErrorMessage({ error: 'cosa_rara' })).toMatch(/No se pudo sincronizar/)
+  })
+})
+
+describe('syncErrorMessage: logros y paradas', () => {
+  it('explica los logros privados y las sincronizaciones paradas', () => {
+    expect(syncErrorMessage({ error: 'achievements_private' })).toMatch(/Detalles de juego.*Público/)
+    expect(syncErrorMessage({ error: 'cancelled' })).toMatch(/administrador/)
+    expect(syncErrorMessage({ error: 'interrupted' })).toMatch(/a medias/)
   })
 })

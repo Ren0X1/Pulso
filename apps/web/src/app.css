@@ -1611,3 +1611,60 @@ a.link-chip:hover {
 .cover-grid-row {
   grid-template-columns: repeat(6, minmax(0, 170px));
 }
+
+/* Sincronización con Steam: notas debajo del botón. */
+.sync-note {
+  font-size: var(--fs-small);
+}
+
+/* Panel de administración. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.panel + .panel .kpis,
+.kpis + .kpis {
+  margin-top: 4px;
+}
+.admin-scroll {
+  overflow-x: auto;
+}
+.admin-table td {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.admin-table .player-link {
+  display: inline-flex;
+}
+.admin-pill {
+  margin-left: 8px;
+}
+.admin-run {
+  font-size: var(--fs-small);
+  white-space: normal;
+  min-width: 200px;
+}
+.admin-runs {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-runs li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-small);
+}
+.admin-runs-user {
+  min-width: 120px;
+  font-weight: 500;
+}

@@ -1,11 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useMatches } from 'react-router'
-import { Activity, Bell, ChartColumn, House, Library, ListChecks, LogOut, Settings, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
+import { Activity, Bell, ChartColumn, House, Library, ListChecks, LogOut, Settings, ShieldCheck, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Avatar, Logo, PulseMark } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import { useLive, userTopic } from '../lib/live.ts'
 import { countIncoming } from '../lib/friends.ts'
 import { countUnread } from '../lib/social.ts'
+import { isAdmin } from '../lib/admin.ts'
 import { isDesktop } from '../lib/platform.ts'
 import { NowPlaying } from './NowPlaying.tsx'
 import { DownloadLauncher } from './DownloadLauncher.tsx'
@@ -60,6 +61,11 @@ export function AppShell() {
   const location = useLocation()
   const [incoming, setIncoming] = useState(0)
   const [unread, setUnread] = useState(0)
+  const [admin, setAdmin] = useState(false)
+
+  useEffect(() => {
+    if (me) void isAdmin(me).then(setAdmin, () => setAdmin(false))
+  }, [me])
 
   const recount = useCallback(async () => {
     if (!me) return
@@ -86,6 +92,7 @@ export function AppShell() {
           <p className="nav-group">Tú</p>
           <NavRow item={{ to: profilePath, label: 'Perfil', icon: UserRound }} />
           <NavRow item={{ to: '/ajustes', label: 'Ajustes', icon: Settings }} />
+          {admin && <NavRow item={{ to: '/admin', label: 'Administración', icon: ShieldCheck }} />}
         </nav>
         <DownloadLauncher />
       </aside>

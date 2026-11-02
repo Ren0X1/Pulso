@@ -1,21 +1,25 @@
 // Edge Function: importar de Steam la biblioteca, las horas y los logros del usuario.
-// Una sincronización revisa los logros de TODOS los juegos, en tandas (los límites de las Edge Functions
-// gratuitas no dan para cientos de juegos en una sola llamada):
-//   POST {}            → empieza: biblioteca y horas completas + la primera tanda de logros
-//   POST { run: id }   → la siguiente tanda de esa sincronización
-//   → { run, games, added, achievementGames, checked, remaining, unlocked } · 429 { error: 'cooldown', retry_after }
+// Una sincronización revisa los logros de TODOS los juegos, en tandas: cada tanda es una llamada a esta misma
+// función (con su propio tiempo límite) y, al acabar, lanza la siguiente. Avanza sola en el servidor aunque
+// se cierre la web; el progreso queda en sync_runs y la web lo sigue en directo.
+//   POST {}                       → empieza (una cada 10 min) · 202 { run }
+//   POST { run }                  → si esa sincronización tuya está atascada, relanza su tanda · 202 { run }
+//   interna { user, forcedBy }    → la fuerza un administrador, sin esperar · 202 { run }
+//   interna { run, step }         → procesa la tanda `step` · 202
+// Errores: 401 not_signed_in · 400 no_steam_account · 429 { error: 'cooldown', retry_after } · 409 run_expired
 // La lógica que decide qué importar está en _shared/steam.ts y tiene tests.
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0'
 import {
+  achievementsPrivate,
   becamePlatinum,
-  canContinueRun,
   hasUnknownAchievements,
   initialStatus,
   mapSchema,
   mapUnlocked,
   nextAchievementBatch,
   parseOwnedGames,
+  runState,
   steamCoverUrl,
   syncCooldown,
   type OwnedGame,
@@ -26,6 +30,11 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const STEAM_API_KEY = Deno.env.get('STEAM_API_KEY') ?? ''
 const API = 'https://api.steampowered.com'
+// Las llamadas internas (la tanda siguiente, el panel de administración) se firman con la clave de servicio.
+const INTERNAL_HEADER = 'x-pulso-internal'
+const SELF_URL = `${SUPABASE_URL}/functions/v1/steam-sync`
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void }
 
 const CORS = {
   'access-control-allow-origin': '*',
@@ -45,7 +54,11 @@ async function steam(path: string, params: Record<string, string | number>): Pro
   const query = new URLSearchParams({ key: STEAM_API_KEY, format: 'json', ...params } as Record<string, string>)
   const res = await fetch(`${API}/${path}?${query}`)
   // Steam responde 400/403 a los logros de un juego que no los tiene o de un perfil privado.
-  if (res.status === 400 || res.status === 403) return null
+  if (res.status === 400 || res.status === 403) {
+    // Los detalles de juego no son públicos: no se verá ningún logro, así que se avisa en vez de seguir a ciegas.
+    if (achievementsPrivate(await res.json().catch(() => null))) throw new SyncError('achievements_private')
+    return null
+  }
   if (!res.ok) throw new SyncError('steam_unavailable')
   return res.json()
 }
@@ -193,112 +206,201 @@ async function syncAchievements(admin: SupabaseClient, userId: string, steamId: 
   return unlocked
 }
 
+interface RunRow {
+  id: number
+  user_id: string
+  started_at: string
+  added: number
+  unlocked: number
+}
+
+async function steamIdOf(admin: SupabaseClient, userId: string): Promise<string | null> {
+  const { data } = await admin
+    .from('linked_accounts')
+    .select('external_user_id')
+    .eq('user_id', userId)
+    .eq('platform', 'steam')
+    .maybeSingle()
+  return (data?.external_user_id as string | undefined) ?? null
+}
+
+/** Una tanda: la primera importa también el perfil, la biblioteca y las horas. */
+async function runBatch(admin: SupabaseClient, run: RunRow, first: boolean) {
+  const steamId = await steamIdOf(admin, run.user_id)
+  if (!steamId) throw new Error('no_steam_account')
+
+  if (first) {
+    const summary = (await steam('ISteamUser/GetPlayerSummaries/v2/', { steamids: steamId })) as {
+      response?: { players?: { personaname: string; avatarfull?: string; communityvisibilitystate?: number }[] }
+    } | null
+    const player = summary?.response?.players?.[0]
+    if (!player) throw new SyncError('steam_unavailable')
+    const visible = player.communityvisibilitystate === 3
+    await admin
+      .from('linked_accounts')
+      .update({ display_name: player.personaname, avatar_url: player.avatarfull ?? null, profile_visibility: visible ? 'public' : 'private' })
+      .eq('user_id', run.user_id)
+      .eq('platform', 'steam')
+    if (!visible) throw new SyncError('profile_private')
+  }
+
+  const parsed = parseOwnedGames(
+    await steam('IPlayerService/GetOwnedGames/v1/', { steamid: steamId, include_appinfo: 1, include_played_free_games: 1 }),
+  )
+  if (!parsed.ok) throw new SyncError(parsed.error)
+
+  // La biblioteca y las horas, completas, en la primera tanda; en las siguientes basta con saber los ids.
+  let owned = parsed.games
+  let state
+  if (first) {
+    state = await importGames(admin, run.user_id, owned)
+  } else {
+    const known = await knownGames(admin, run.user_id, owned)
+    owned = known.owned
+    state = known
+  }
+  const { batch, total, remaining } = nextAchievementBatch(owned, state.syncedAt, new Date(run.started_at))
+  const unlocked = await syncAchievements(admin, run.user_id, steamId, batch, state.gameIdByApp)
+  return { games: parsed.games.length, added: state.added, total, checked: total - remaining, remaining, unlocked }
+}
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** Pide a esta misma función la tanda siguiente; solo espera a que la acepte, no a que termine. */
+async function chain(runId: number, step: number) {
+  const res = await fetch(SELF_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      [INTERNAL_HEADER]: SERVICE_ROLE_KEY,
+    },
+    body: JSON.stringify({ run: runId, step }),
+  })
+  await res.body?.cancel()
+  if (!res.ok) throw new Error(`chain ${res.status}`)
+}
+
+/** Procesa la tanda `step` de una sincronización (si nadie la ha cogido ya) y lanza la siguiente. */
+async function processStep(admin: SupabaseClient, runId: number, step: number) {
+  // Reclamar la tanda: si otra llamada ya la cogió o la sincronización terminó, no hay nada que hacer.
+  const { data: run } = await admin
+    .from('sync_runs')
+    .update({ step: step + 1, updated_at: new Date().toISOString() })
+    .eq('id', runId)
+    .eq('status', 'running')
+    .eq('step', step)
+    .select('id, user_id, started_at, added, unlocked, games')
+    .maybeSingle()
+  if (!run) return
+
+  try {
+    let result
+    // Steam falla a veces de forma pasajera: hasta 3 intentos antes de dar la sincronización por fallida.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        // Hasta que una tanda no termina bien, la biblioteca no está importada: esa tanda la importa.
+        result = await runBatch(admin, run as RunRow, run.games === null)
+        break
+      } catch (err) {
+        const permanent = err instanceof SyncError && err.code !== 'steam_unavailable'
+        if (permanent || attempt === 3) throw err
+        await wait(attempt * 3000)
+      }
+    }
+    const now = new Date().toISOString()
+    const done = result.remaining === 0
+    await admin
+      .from('sync_runs')
+      .update({
+        games: result.games,
+        added: run.added + result.added,
+        total: result.total,
+        checked: result.checked,
+        unlocked: run.unlocked + result.unlocked,
+        updated_at: now,
+        ...(done ? { status: 'ok', finished_at: now } : {}),
+      })
+      .eq('id', runId)
+    if (done) {
+      await admin.from('linked_accounts').update({ last_synced_at: now }).eq('user_id', run.user_id).eq('platform', 'steam')
+      return
+    }
+    // Si la llamada a la tanda siguiente falla dos veces, la sincronización queda "atascada" y la web la relanza.
+    await chain(runId, step + 1).catch(() => chain(runId, step + 1)).catch(() => {})
+  } catch (err) {
+    const code = err instanceof SyncError ? err.code : 'server_error'
+    // Solo el código: nunca datos del usuario en los logs.
+    console.error('steam-sync', code, err instanceof SyncError ? '' : err instanceof Error ? err.message : '')
+    await admin.from('sync_runs').update({ status: 'error', error: code, finished_at: new Date().toISOString() }).eq('id', runId)
+  }
+}
+
+/** Empieza una sincronización nueva (la que estuviera a medias se da por interrumpida). */
+async function startRun(admin: SupabaseClient, userId: string, forcedBy: string | null) {
+  await admin
+    .from('sync_runs')
+    .update({ status: 'error', error: 'interrupted', finished_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('status', 'running')
+  const { data, error } = await admin
+    .from('sync_runs')
+    .insert({ user_id: userId, platform: 'steam', forced_by: forcedBy })
+    .select('id')
+    .single()
+  if (error) throw new Error(`sync_runs: ${error.code}`)
+  EdgeRuntime.waitUntil(processStep(admin, data.id as number, 0))
+  return data.id as number
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405)
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+  const body = (await req.json().catch(() => ({}))) as { run?: unknown; step?: unknown; user?: unknown; forcedBy?: unknown }
+  const runId = typeof body?.run === 'number' ? body.run : null
+
+  // Llamadas internas: la tanda siguiente, o una sincronización forzada desde el panel de administración.
+  if (req.headers.get(INTERNAL_HEADER) === SERVICE_ROLE_KEY) {
+    if (typeof body.user === 'string') {
+      if (!(await steamIdOf(admin, body.user))) return json({ error: 'no_steam_account' }, 400)
+      return json({ run: await startRun(admin, body.user, typeof body.forcedBy === 'string' ? body.forcedBy : null) }, 202)
+    }
+    if (runId !== null && typeof body.step === 'number') {
+      EdgeRuntime.waitUntil(processStep(admin, runId, body.step))
+      return json({ run: runId }, 202)
+    }
+    return json({ error: 'bad_request' }, 400)
+  }
+
   const jwt = req.headers.get('authorization')?.replace(/^Bearer /i, '') ?? ''
   const { data: auth } = await admin.auth.getUser(jwt)
   const user = auth.user
   if (!user) return json({ error: 'not_signed_in' }, 401)
 
-  const { data: account } = await admin
-    .from('linked_accounts')
-    .select('external_user_id')
+  // Una sincronización tuya que lleva rato sin avanzar (se perdió una tanda): se relanza esa tanda.
+  if (runId !== null) {
+    const { data: run } = await admin.from('sync_runs').select('id, user_id, status, updated_at, step').eq('id', runId).maybeSingle()
+    if (!run || run.user_id !== user.id) return json({ error: 'run_expired' }, 409)
+    const state = runState(run, new Date())
+    if (state === 'expired') {
+      await admin.from('sync_runs').update({ status: 'error', error: 'interrupted', finished_at: new Date().toISOString() }).eq('id', runId)
+      return json({ error: 'run_expired' }, 409)
+    }
+    if (state === 'stalled') EdgeRuntime.waitUntil(processStep(admin, runId, run.step as number))
+    return json({ run: runId }, 202)
+  }
+
+  if (!(await steamIdOf(admin, user.id))) return json({ error: 'no_steam_account' }, 400)
+  const { data: last } = await admin
+    .from('sync_runs')
+    .select('started_at')
     .eq('user_id', user.id)
-    .eq('platform', 'steam')
+    .order('started_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
-  if (!account) return json({ error: 'no_steam_account' }, 400)
-  const steamId = account.external_user_id as string
-
-  const body = (await req.json().catch(() => ({}))) as { run?: unknown }
-  const continuing = typeof body?.run === 'string' ? body.run : null
-  const now = new Date()
-
-  let run: { id: string; started_at: string }
-  if (continuing) {
-    const { data } = await admin.from('sync_runs').select('id, user_id, status, started_at').eq('id', continuing).maybeSingle()
-    if (!canContinueRun(data, user.id, now)) return json({ error: 'run_expired' }, 409)
-    run = data!
-  } else {
-    const { data: last } = await admin
-      .from('sync_runs')
-      .select('started_at')
-      .eq('user_id', user.id)
-      .order('started_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const wait = syncCooldown(last ? new Date(last.started_at) : null, now)
-    if (wait > 0) return json({ error: 'cooldown', retry_after: wait }, 429)
-    // Una sincronización anterior que se quedó a medias (se cerró la app) ya no va a continuar.
-    await admin
-      .from('sync_runs')
-      .update({ status: 'error', error: 'interrupted', finished_at: now.toISOString() })
-      .eq('user_id', user.id)
-      .eq('status', 'running')
-    const { data } = await admin.from('sync_runs').insert({ user_id: user.id, platform: 'steam' }).select('id, started_at').single()
-    run = data!
-  }
-  const finish = (status: 'ok' | 'error', error: string | null = null) =>
-    admin.from('sync_runs').update({ status, error, finished_at: new Date().toISOString() }).eq('id', run.id)
-
-  try {
-    if (!continuing) {
-      const summary = (await steam('ISteamUser/GetPlayerSummaries/v2/', { steamids: steamId })) as {
-        response?: { players?: { personaname: string; avatarfull?: string; communityvisibilitystate?: number }[] }
-      } | null
-      const player = summary?.response?.players?.[0]
-      if (!player) throw new SyncError('steam_unavailable')
-      const visible = player.communityvisibilitystate === 3
-      await admin
-        .from('linked_accounts')
-        .update({ display_name: player.personaname, avatar_url: player.avatarfull ?? null, profile_visibility: visible ? 'public' : 'private' })
-        .eq('user_id', user.id)
-        .eq('platform', 'steam')
-      if (!visible) throw new SyncError('profile_private')
-    }
-
-    const parsed = parseOwnedGames(
-      await steam('IPlayerService/GetOwnedGames/v1/', { steamid: steamId, include_appinfo: 1, include_played_free_games: 1 }),
-    )
-    if (!parsed.ok) throw new SyncError(parsed.error)
-
-    // La biblioteca y las horas, completas, al empezar; en las tandas siguientes basta con saber los ids.
-    let owned = parsed.games
-    let state
-    if (continuing) {
-      const known = await knownGames(admin, user.id, owned)
-      owned = known.owned
-      state = known
-    } else {
-      state = await importGames(admin, user.id, owned)
-    }
-    const { batch, total, remaining } = nextAchievementBatch(owned, state.syncedAt, new Date(run.started_at))
-    const unlocked = await syncAchievements(admin, user.id, steamId, batch, state.gameIdByApp)
-
-    if (remaining === 0) {
-      await admin
-        .from('linked_accounts')
-        .update({ last_synced_at: new Date().toISOString() })
-        .eq('user_id', user.id)
-        .eq('platform', 'steam')
-      await finish('ok')
-    }
-    return json({
-      run: run.id,
-      games: parsed.games.length,
-      added: state.added,
-      achievementGames: total,
-      checked: total - remaining,
-      remaining,
-      unlocked,
-    })
-  } catch (err) {
-    const code = err instanceof SyncError ? err.code : 'server_error'
-    // Solo el código: nunca datos del usuario en los logs.
-    console.error('steam-sync', code, err instanceof SyncError ? '' : err instanceof Error ? err.message : '')
-    await finish('error', code)
-    return json({ error: code }, err instanceof SyncError ? 422 : 500)
-  }
+  const retry = syncCooldown(last ? new Date(last.started_at) : null, new Date())
+  if (retry > 0) return json({ error: 'cooldown', retry_after: retry }, 429)
+  return json({ run: await startRun(admin, user.id, null) }, 202)
 })

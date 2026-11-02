@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   achievementIconUrl,
   becamePlatinum,
-  canContinueRun,
+  achievementsPrivate,
   hasUnknownAchievements,
   initialStatus,
   mapSchema,
@@ -10,6 +10,7 @@ import {
   nextAchievementBatch,
   parseOwnedGames,
   pickAchievementGames,
+  runState,
   steamCoverUrl,
   syncCooldown,
   type OwnedGame,
@@ -197,19 +198,34 @@ describe('nextAchievementBatch', () => {
   })
 })
 
-describe('canContinueRun', () => {
+describe('runState', () => {
   const now = new Date('2026-10-29T10:10:00Z')
-  const run = { user_id: 'u1', status: 'running', started_at: '2026-10-29T10:00:00Z' }
+  const run = { status: 'running', updated_at: '2026-10-29T10:09:30Z' }
 
-  it('la del propio usuario, en marcha y reciente', () => {
-    expect(canContinueRun(run, 'u1', now)).toBe(true)
+  it('en marcha si la última tanda es reciente', () => {
+    expect(runState(run, now)).toBe('active')
   })
 
-  it('no la de otro, ni una terminada, ni una abandonada hace más de 30 min', () => {
-    expect(canContinueRun(run, 'u2', now)).toBe(false)
-    expect(canContinueRun({ ...run, status: 'ok' }, 'u1', now)).toBe(false)
-    expect(canContinueRun(run, 'u1', new Date('2026-10-29T10:31:00Z'))).toBe(false)
-    expect(canContinueRun(null, 'u1', now)).toBe(false)
+  it('atascada si lleva más de 90 s sin avanzar: se puede relanzar la tanda', () => {
+    expect(runState({ ...run, updated_at: '2026-10-29T10:08:00Z' }, now)).toBe('stalled')
+  })
+
+  it('caducada tras 30 min sin avanzar, aunque empezara hace horas mientras avance', () => {
+    expect(runState({ ...run, updated_at: '2026-10-29T09:39:00Z' }, now)).toBe('expired')
+  })
+
+  it('terminada si ya no está en marcha', () => {
+    expect(runState({ ...run, status: 'ok' }, now)).toBe('done')
+    expect(runState(null, now)).toBe('done')
+  })
+})
+
+describe('achievementsPrivate', () => {
+  it('Steam dice que el perfil no es público al pedir los logros (detalles de juego privados)', () => {
+    expect(achievementsPrivate({ playerstats: { error: 'Profile is not public', success: false } })).toBe(true)
+    expect(achievementsPrivate({ playerstats: { error: 'Requested app has no stats', success: false } })).toBe(false)
+    expect(achievementsPrivate({ playerstats: { success: true, achievements: [] } })).toBe(false)
+    expect(achievementsPrivate(null)).toBe(false)
   })
 })
 

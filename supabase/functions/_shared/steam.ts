@@ -14,7 +14,7 @@ export interface OwnedGame {
   has_community_visible_stats?: boolean
 }
 
-export type SteamSyncError = 'profile_private' | 'games_private' | 'steam_unavailable'
+export type SteamSyncError = 'profile_private' | 'games_private' | 'achievements_private' | 'steam_unavailable'
 
 export function steamCoverUrl(appid: number): string {
   return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`
@@ -44,7 +44,9 @@ export function initialStatus(game: OwnedGame, now: Date): 'playing' | 'backlog'
 
 /** Una sincronización revisa los logros de todos los juegos, en tandas de este tamaño (una llamada cada una). */
 export const ACHIEVEMENT_BATCH = 30
-/** Una sincronización a medias que no continúa en este tiempo se da por abandonada. */
+/** Sin avanzar este tiempo, una tanda se da por perdida y se puede relanzar. */
+export const RUN_STALL_SECONDS = 90
+/** Sin avanzar este tiempo, la sincronización se da por abandonada. */
 export const RUN_EXPIRES_MINUTES = 30
 
 /**
@@ -67,14 +69,17 @@ export function nextAchievementBatch(
   return { batch, total: withStats.length, remaining: pending.length - batch.length }
 }
 
-/** Una tanda que continúa una sincronización: solo si es del mismo usuario, sigue en marcha y no ha caducado. */
-export function canContinueRun(run: { user_id: string; status: string; started_at: string } | null, userId: string, now: Date) {
-  return (
-    !!run &&
-    run.user_id === userId &&
-    run.status === 'running' &&
-    now.getTime() - new Date(run.started_at).getTime() < RUN_EXPIRES_MINUTES * 60_000
-  )
+/** En qué punto está una sincronización según su última tanda (no su inicio: una biblioteca enorme tarda). */
+export function runState(run: { status: string; updated_at: string } | null, now: Date): 'active' | 'stalled' | 'expired' | 'done' {
+  if (!run || run.status !== 'running') return 'done'
+  const idle = now.getTime() - new Date(run.updated_at).getTime()
+  if (idle >= RUN_EXPIRES_MINUTES * 60_000) return 'expired'
+  return idle >= RUN_STALL_SECONDS * 1000 ? 'stalled' : 'active'
+}
+
+/** Steam niega los logros con "Profile is not public" cuando los detalles de juego no son públicos. */
+export function achievementsPrivate(player: unknown): boolean {
+  return (player as { playerstats?: { error?: string } } | null)?.playerstats?.error === 'Profile is not public'
 }
 
 /** Logros que el jugador tiene en Steam y Pulso aún no conoce (el juego ha añadido logros): hay que releer la lista. */

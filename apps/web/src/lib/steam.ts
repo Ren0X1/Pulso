@@ -1,19 +1,28 @@
 import { supabase } from './supabase.ts'
 
-/** Una tanda de steam-sync: la biblioteca entera al empezar y los logros de unos cuantos juegos cada vez. */
-export interface SyncResult {
-  run: string
-  games: number
+/** Una sincronización con Steam tal como la guarda el servidor: avanza sola, tanda a tanda. */
+export interface SyncRun {
+  id: number
+  status: 'running' | 'ok' | 'error'
+  error: string | null
+  started_at: string
+  finished_at: string | null
+  updated_at: string
+  /** Juegos en Steam (null hasta que termina la primera tanda). */
+  games: number | null
   added: number
-  /** Juegos con logros en Steam. */
-  achievementGames: number
-  /** De esos, cuántos lleva revisados esta sincronización. */
+  /** Juegos con logros en Steam, y cuántos lleva revisados. */
+  total: number | null
   checked: number
-  remaining: number
   unlocked: number
+  /** Si la lanzó un administrador. */
+  forced_by: string | null
 }
 
 export type SyncFailure = { error: string; retry_after?: number }
+
+/** Sin avanzar este tiempo, la web relanza la tanda (lo mismo que RUN_STALL_SECONDS en el servidor). */
+export const STALL_SECONDS = 90
 
 export function syncErrorMessage(failure: SyncFailure): string {
   switch (failure.error) {
@@ -21,10 +30,15 @@ export function syncErrorMessage(failure: SyncFailure): string {
       return 'Tu perfil de Steam es privado. En Steam, Editar perfil → Privacidad, pon "Mi perfil" en Público.'
     case 'games_private':
       return 'Steam no comparte tus juegos: pon "Detalles de juego" en Público en la privacidad de tu perfil de Steam.'
+    case 'achievements_private':
+      return 'Steam no comparte tus logros: pon "Detalles de juego" en Público (no "Solo amigos") en la privacidad de tu perfil de Steam. Tu biblioteca y tus horas sí se han importado.'
     case 'cooldown':
       return `Ya sincronizaste hace poco. Vuelve a intentarlo en ${Math.ceil((failure.retry_after ?? 600) / 60)} min.`
     case 'run_expired':
+    case 'interrupted':
       return 'La sincronización se quedó a medias. Vuelve a sincronizar para terminarla.'
+    case 'cancelled':
+      return 'Un administrador paró la sincronización. Vuelve a sincronizar cuando quieras.'
     case 'steam_unavailable':
       return 'Steam no responde ahora mismo. Inténtalo en unos minutos.'
     default:
@@ -32,52 +46,47 @@ export function syncErrorMessage(failure: SyncFailure): string {
   }
 }
 
-async function syncBatch(run?: string): Promise<SyncResult | SyncFailure> {
-  const { data, error } = await supabase!.functions.invoke('steam-sync', { method: 'POST', body: run ? { run } : {} })
+async function callSync(body: Record<string, unknown>): Promise<{ run: number } | SyncFailure> {
+  const { data, error } = await supabase!.functions.invoke('steam-sync', { method: 'POST', body })
   if (error) {
-    const body = await (error as { context?: Response }).context?.json?.().catch(() => null)
-    return (body as SyncFailure | null) ?? { error: 'server_error' }
+    const res = await (error as { context?: Response }).context?.json?.().catch(() => null)
+    return (res as SyncFailure | null) ?? { error: 'server_error' }
   }
-  return data as SyncResult
+  return data as { run: number }
 }
 
-/** Junta una tanda con lo acumulado: los logros conseguidos se suman; los nuevos solo los cuenta la primera. */
-export function mergeSync(total: SyncResult | null, batch: SyncResult): SyncResult {
-  return total ? { ...batch, added: total.added, unlocked: total.unlocked + batch.unlocked } : batch
+/** Empieza una sincronización completa; sigue sola en el servidor aunque se cierre la web. */
+export const startSync = () => callSync({})
+
+/** Relanza la tanda de una sincronización que lleva rato sin avanzar. */
+export const kickSync = (run: number) => callSync({ run })
+
+/** Si una sincronización en marcha lleva demasiado sin avanzar. */
+export function isStalled(run: Pick<SyncRun, 'status' | 'updated_at'>, now = new Date()): boolean {
+  return run.status === 'running' && now.getTime() - new Date(run.updated_at).getTime() >= STALL_SECONDS * 1000
 }
 
-/** Sincroniza todo: pide tandas hasta que no quedan juegos por revisar, avisando del progreso. */
-export async function syncSteam(
-  onProgress?: (progress: SyncResult) => void,
-  batch: (run?: string) => Promise<SyncResult | SyncFailure> = syncBatch,
-): Promise<SyncResult | SyncFailure> {
-  let total: SyncResult | null = null
-  // Con 30 juegos por tanda, 200 tandas son 6000 juegos con logros: de sobra, y nunca un bucle infinito.
-  for (let i = 0; i < 200; i++) {
-    const res = await batch(total?.run)
-    if ('error' in res) return res
-    total = mergeSync(total, res)
-    onProgress?.(total)
-    if (res.remaining === 0) return total
-  }
-  return { error: 'server_error' }
+/** Qué está haciendo una sincronización en marcha, en palabras. */
+export function syncProgressText(run: Pick<SyncRun, 'games' | 'total' | 'checked'>): string {
+  if (run.games === null || run.total === null) return 'Importando tu biblioteca y tus horas…'
+  return `Revisando logros: ${run.checked} de ${run.total} juegos…`
 }
 
-export interface LastSync {
-  status: 'running' | 'ok' | 'error'
-  error: string | null
-  started_at: string
-  finished_at: string | null
+/** Resumen de una sincronización terminada. */
+export function syncSummaryText(run: Pick<SyncRun, 'games' | 'added' | 'checked' | 'unlocked'>): string {
+  return `${run.games ?? 0} juegos en Steam · ${run.added} nuevos en tu biblioteca · logros revisados en ${run.checked} juegos (${run.unlocked} conseguidos)`
 }
 
-export async function loadLastSync(): Promise<LastSync | null> {
+export const SYNC_RUN_FIELDS = 'id, status, error, started_at, finished_at, updated_at, games, added, total, checked, unlocked, forced_by'
+
+export async function loadLastSync(): Promise<SyncRun | null> {
   const { data } = await supabase!
     .from('sync_runs')
-    .select('status, error, started_at, finished_at')
+    .select(SYNC_RUN_FIELDS)
     .order('started_at', { ascending: false })
     .limit(1)
     .maybeSingle()
-  return (data as LastSync | null) ?? null
+  return (data as SyncRun | null) ?? null
 }
 
 export function formatAgo(iso: string, now = new Date()): string {

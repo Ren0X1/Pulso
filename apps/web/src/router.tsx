@@ -49,6 +49,7 @@ export const router = createBrowserRouter([
                 ...page('Notificaciones', async () => (await import('./pages/Notifications.tsx')).NotificationsPage),
               },
               { path: 'ajustes', ...page('Ajustes', async () => (await import('./pages/Settings.tsx')).SettingsPage) },
+              { path: 'admin', ...page('Administración', async () => (await import('./pages/Admin.tsx')).AdminPage) },
             ],
           },
         ],
