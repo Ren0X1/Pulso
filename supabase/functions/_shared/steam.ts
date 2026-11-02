@@ -82,6 +82,14 @@ export function achievementsPrivate(player: unknown): boolean {
   return (player as { playerstats?: { error?: string } } | null)?.playerstats?.error === 'Profile is not public'
 }
 
+/**
+ * Steam también niega los logros de juegos sueltos (marcados como privados en la biblioteca, o que ya no son
+ * suyos): esos se saltan. Solo es cosa de la cuenta si no deja ver ninguno y ya ha negado varios.
+ */
+export function hiddenForWholeAccount(read: number, hidden: number): boolean {
+  return read === 0 && hidden >= 3
+}
+
 /** Logros que el jugador tiene en Steam y Pulso aún no conoce (el juego ha añadido logros): hay que releer la lista. */
 export function hasUnknownAchievements(player: unknown, known: Set<string>): boolean {
   const list = (player as { playerstats?: { achievements?: { apiname: string }[] } } | null)?.playerstats?.achievements ?? []

@@ -42,6 +42,13 @@ describe('suggestUsername', () => {
     expect(name).toBe('x'.repeat(18) + '_2')
   })
 
+  it('el username admite mayúsculas, pero no espacios, guiones ni acentos', () => {
+    expect(usernameSchema.safeParse('Ren0X1').success).toBe(true)
+    expect(usernameSchema.safeParse('Ren 0X1').success).toBe(false)
+    expect(usernameSchema.safeParse('ren-0x1').success).toBe(false)
+    expect(usernameSchema.safeParse('Óscar').success).toBe(false)
+  })
+
   it('siempre devuelve un username válido', () => {
     for (const persona of ['', ' ', '__', 'a_', '日本語', 'Ab-Cd.Ef', 'ÆØÅ', 'x'.repeat(25) + ' y']) {
       const name = suggestUsername(persona, STEAM_ID, free)
@@ -56,8 +63,8 @@ describe('usernameSchema', () => {
     expect(usernameSchema.safeParse('a'.repeat(20)).success).toBe(true)
   })
 
-  it('rechaza mayúsculas, longitudes fuera de rango y símbolos', () => {
-    for (const bad of ['ab', 'a'.repeat(21), 'Ren0X1', 'ren-0x1', 'ren 0x1']) {
+  it('rechaza longitudes fuera de rango y símbolos', () => {
+    for (const bad of ['ab', 'a'.repeat(21), 'ren-0x1', 'ren 0x1']) {
       expect(usernameSchema.safeParse(bad).success, bad).toBe(false)
     }
   })

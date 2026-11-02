@@ -48,8 +48,13 @@ export async function loadMyFriendships(me: string): Promise<FriendshipWithPlaye
   return data as unknown as FriendshipWithPlayers[]
 }
 
+/** Patrón ILIKE que encuentra ese username exacto sin distinguir mayúsculas (`_` es comodín en LIKE). */
+export function exactUsername(username: string): string {
+  return username.replace(/[\\%_]/g, (c) => `\\${c}`)
+}
+
 export async function searchPlayers(term: string, me: string): Promise<PlayerSummary[]> {
-  const clean = term.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
+  const clean = term.trim().replace(/[^A-Za-z0-9_]/g, '')
   if (clean.length < 2) return []
   const { data, error } = await supabase!
     .from('profiles')

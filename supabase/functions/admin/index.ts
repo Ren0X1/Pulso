@@ -18,7 +18,7 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, 'content-type': 'application/json' } })
 
-const RUN_FIELDS = 'id, user_id, status, error, started_at, finished_at, updated_at, games, added, total, checked, unlocked, forced_by'
+const RUN_FIELDS = 'id, user_id, status, error, started_at, finished_at, updated_at, games, added, total, checked, unlocked, hidden_games, forced_by'
 
 async function count(db: SupabaseClient, table: string, filter?: (q: any) => any) {
   let query = db.from(table).select('*', { count: 'exact', head: true })

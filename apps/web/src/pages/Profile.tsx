@@ -10,6 +10,7 @@ import { ProfileShowcase } from './ProfileShowcase.tsx'
 import { PlatinumCount } from './Platinum.tsx'
 import { ProfileLinks } from './ProfileLinks.tsx'
 import { loadPlatinums } from '../lib/achievements.ts'
+import { exactUsername } from '../lib/friends.ts'
 
 const joined = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' })
 
@@ -26,7 +27,7 @@ export function ProfilePage() {
     void supabase
       .from('profiles')
       .select(PROFILE_COLUMNS)
-      .eq('username', username.toLowerCase())
+      .ilike('username', exactUsername(username))
       .maybeSingle()
       .then(({ data }) => {
         const found = (data as ProfileRow | null) ?? null

@@ -5,7 +5,7 @@ export const usernameSchema = z
   .string()
   .min(USERNAME_MIN, `Mínimo ${USERNAME_MIN} caracteres`)
   .max(USERNAME_MAX, `Máximo ${USERNAME_MAX} caracteres`)
-  .regex(USERNAME_PATTERN, 'Solo minúsculas, números y _')
+  .regex(USERNAME_PATTERN, 'Solo letras sin acentos, números y _')
 
 export const BIO_MAX = 280
 

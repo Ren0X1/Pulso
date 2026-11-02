@@ -14,6 +14,7 @@ import {
   achievementsPrivate,
   becamePlatinum,
   hasUnknownAchievements,
+  hiddenForWholeAccount,
   initialStatus,
   mapSchema,
   mapUnlocked,
@@ -166,12 +167,23 @@ async function loadSchema(admin: SupabaseClient, game: OwnedGame, gameId: number
 
 async function syncAchievements(admin: SupabaseClient, userId: string, steamId: string, games: OwnedGame[], gameIdByApp: Map<number, number>) {
   let unlocked = 0
+  let read = 0
+  let hidden = 0
   await pool(games, 6, async (game) => {
     const gameId = gameIdByApp.get(game.appid)!
     let { data: known } = await admin.from('achievements').select('id, api_name').eq('game_id', gameId)
     if (!known?.length) known = await loadSchema(admin, game, gameId)
     if (known?.length) {
-      const player = await steam('ISteamUserStats/GetPlayerAchievements/v1/', { steamid: steamId, appid: game.appid })
+      let player: unknown
+      try {
+        player = await steam('ISteamUserStats/GetPlayerAchievements/v1/', { steamid: steamId, appid: game.appid })
+        read++
+      } catch (err) {
+        if (!(err instanceof SyncError && err.code === 'achievements_private')) throw err
+        // Steam oculta los logros de este juego (marcado como privado en la biblioteca, o ya no es suyo): se salta.
+        hidden++
+        player = null
+      }
       // El juego ha añadido logros (un DLC, una actualización) desde que se guardó su lista: se relee.
       if (hasUnknownAchievements(player, new Set(known.map((a) => a.api_name as string)))) {
         known = await loadSchema(admin, game, gameId)
@@ -203,7 +215,7 @@ async function syncAchievements(admin: SupabaseClient, userId: string, steamId: 
       .eq('user_id', userId)
       .eq('game_id', gameId)
   })
-  return unlocked
+  return { unlocked, read, hidden }
 }
 
 interface RunRow {
@@ -212,6 +224,8 @@ interface RunRow {
   started_at: string
   added: number
   unlocked: number
+  read_games: number
+  hidden_games: number
 }
 
 async function steamIdOf(admin: SupabaseClient, userId: string): Promise<string | null> {
@@ -260,8 +274,10 @@ async function runBatch(admin: SupabaseClient, run: RunRow, first: boolean) {
     state = known
   }
   const { batch, total, remaining } = nextAchievementBatch(owned, state.syncedAt, new Date(run.started_at))
-  const unlocked = await syncAchievements(admin, run.user_id, steamId, batch, state.gameIdByApp)
-  return { games: parsed.games.length, added: state.added, total, checked: total - remaining, remaining, unlocked }
+  const { unlocked, read, hidden } = await syncAchievements(admin, run.user_id, steamId, batch, state.gameIdByApp)
+  // Si Steam no deja ver los logros de ningún juego, son los detalles de juego de la cuenta: se dice qué cambiar.
+  if (hiddenForWholeAccount(run.read_games + read, run.hidden_games + hidden)) throw new SyncError('achievements_private')
+  return { games: parsed.games.length, added: state.added, total, checked: total - remaining, remaining, unlocked, read, hidden }
 }
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -290,7 +306,7 @@ async function processStep(admin: SupabaseClient, runId: number, step: number) {
     .eq('id', runId)
     .eq('status', 'running')
     .eq('step', step)
-    .select('id, user_id, started_at, added, unlocked, games')
+    .select('id, user_id, started_at, added, unlocked, games, read_games, hidden_games')
     .maybeSingle()
   if (!run) return
 
@@ -318,6 +334,8 @@ async function processStep(admin: SupabaseClient, runId: number, step: number) {
         total: result.total,
         checked: result.checked,
         unlocked: run.unlocked + result.unlocked,
+        read_games: run.read_games + result.read,
+        hidden_games: run.hidden_games + result.hidden,
         updated_at: now,
         ...(done ? { status: 'ok', finished_at: now } : {}),
       })

@@ -55,6 +55,7 @@ Clave de Steam Web API gratis: https://steamcommunity.com/dev/apikey
 
 - **RLS en todas las tablas.** La privacidad se aplica en la base de datos; cada política nueva lleva su test en `supabase/tests/rls.test.ts`.
 - Lo que viene de Steam (origen `steam`, horas, logros) **solo lo escribe el servidor**. El cliente no puede crearlo ni cambiarlo (permisos por columna).
+- Usernames: letras (mayúsculas permitidas), números y `_`, únicos sin distinguir mayúsculas (índice sobre `lower(username)`); los perfiles se buscan con `ilike` + `exactUsername`.
 - **Login solo con Steam** (OpenID verificado en `auth-steam`). Email sintético `<steamid64>@steam.pulso.invalid`.
 - Secretos solo en Edge Functions. Nunca tokens ni datos personales en logs.
 - **Nada de datos inventados**: si algo no existe aún, la pantalla lo dice (estado vacío honesto).
@@ -88,7 +89,7 @@ cada push.
 ## Proyecto de Supabase
 
 - Ref `jaxxqwqyhptgbymlmmwr` · URL `https://jaxxqwqyhptgbymlmmwr.supabase.co` · MCP configurado en `.mcp.json` (aplicar migraciones y desplegar funciones desde Claude Code).
-- Migraciones aplicadas: `init`, `private_functions`, `rls_perf`, `share_codes`, `steam_sync`, `list_members`, `notifications`, `profile_media_stats`, `live_updates`, `admin_sync` (las mismas que `supabase/migrations`).
+- Migraciones aplicadas: `init`, `private_functions`, `rls_perf`, `share_codes`, `steam_sync`, `list_members`, `notifications`, `profile_media_stats`, `live_updates`, `admin_sync`, `sync_hidden_games`, `username_case` (las mismas que `supabase/migrations`).
 - Listas: el código crea una **copia**; además el dueño puede invitar a **amigos** como lector o editor (`game_list_members`). Los editores solo tocan los juegos; nombre, visibilidad, códigos y miembros son del dueño.
 - Imágenes de perfil en el bucket público `profile-media` (WebP/JPEG/PNG, 2 MB), una carpeta por usuario (`<uid>/avatar-…`, `<uid>/banner-…`); solo el dueño sube o borra. Vista `achievements_by_month` (security_invoker) para Estadísticas.
 - Botón de descarga del launcher (`apps/web/src/layout/DownloadLauncher.tsx`): lee la última release de la API de GitHub; solo en navegador de escritorio.
@@ -99,7 +100,7 @@ cada push.
 - Edge Functions, todas con `verify_jwt = false` y el usuario comprobado en el código (con `verify_jwt` la pasarela rechaza el preflight CORS):
   - `auth-steam` — login con Steam.
   - `catalog` — búsqueda en IGDB con caché en `games`; completa los juegos importados de Steam en vez de duplicarlos.
-  - `steam-sync` — importa **todo** y **avanza sola en el servidor**: `POST {}` crea la fila de `sync_runs` y contesta 202; cada tanda (biblioteca y horas en la primera, logros de 30 juegos en cada una) es otra llamada a la propia función (cabecera `x-pulso-internal` = clave de servicio) lanzada con `EdgeRuntime.waitUntil`. El progreso (`games`, `total`, `checked`, `unlocked`) queda en `sync_runs` y avisa por `user:<id>`; la web solo lo sigue. Cada tanda se reclama subiendo `step` (nunca dos a la vez). Sin avanzar 90 s está atascada y la web la relanza con `POST { run }`; a los 30 min caduca. Una nueva cada 10 min. Si Steam niega los logros ("Profile is not public": detalles de juego en *Solo amigos*), falla con `achievements_private` y la web dice qué cambiar.
+  - `steam-sync` — importa **todo** y **avanza sola en el servidor**: `POST {}` crea la fila de `sync_runs` y contesta 202; cada tanda (biblioteca y horas en la primera, logros de 30 juegos en cada una) es otra llamada a la propia función (cabecera `x-pulso-internal` = clave de servicio) lanzada con `EdgeRuntime.waitUntil`. El progreso (`games`, `total`, `checked`, `unlocked`) queda en `sync_runs` y avisa por `user:<id>`; la web solo lo sigue. Cada tanda se reclama subiendo `step` (nunca dos a la vez). Sin avanzar 90 s está atascada y la web la relanza con `POST { run }`; a los 30 min caduca. Una nueva cada 10 min. Steam niega los logros de juegos sueltos ("Profile is not public": privados en la biblioteca o que ya no son suyos): se saltan y se cuentan en `hidden_games`. Si no deja ver ninguno (detalles de juego en *Solo amigos*), falla con `achievements_private` y la web dice qué cambiar.
   - `admin` — panel de administración (`/admin` en la web, solo visible para administradores): resumen, usuarios, forzar o parar sincronizaciones, dar y quitar acceso. Comprueba `app_admins` en cada llamada.
 - Secretos (*Edge Functions → Secrets* en el panel; guardarlos desde el MCP está desactivado por Supabase): `STEAM_API_KEY`, `PULSO_APP_URL`, `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`.
 - Al desplegar una función por MCP hay que subir también sus ficheros de `_shared/` con nombre `../_shared/<fichero>`.

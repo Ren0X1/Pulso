@@ -2,7 +2,9 @@
 
 export const USERNAME_MIN = 3
 export const USERNAME_MAX = 20
-export const USERNAME_PATTERN = /^[a-z0-9_]+$/
+// Letras (mayúsculas o minúsculas, sin acentos), números y _. Dos nombres que solo cambian en mayúsculas son el
+// mismo: la base de datos los compara en minúsculas.
+export const USERNAME_PATTERN = /^[A-Za-z0-9_]+$/
 
 function slugify(persona: string): string {
   return persona

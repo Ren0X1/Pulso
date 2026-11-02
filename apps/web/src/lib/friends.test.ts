@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { friendshipWith, type FriendshipRow } from './friends.ts'
+import { exactUsername, friendshipWith, type FriendshipRow } from './friends.ts'
 
 const ME = 'me'
 const OTHER = 'other'
@@ -34,5 +34,12 @@ describe('friendshipWith', () => {
 
   it('conmigo mismo no hay relación posible', () => {
     expect(friendshipWith(ME, ME, [])).toBe('self')
+  })
+})
+
+describe('exactUsername', () => {
+  it('busca ese nombre exacto sin distinguir mayúsculas: el _ deja de ser comodín', () => {
+    expect(exactUsername('Ren0X1')).toBe('Ren0X1')
+    expect(exactUsername('ren_0x1')).toBe('ren\\_0x1')
   })
 })

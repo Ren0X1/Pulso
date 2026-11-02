@@ -1637,11 +1637,10 @@ a.link-chip:hover {
   vertical-align: middle;
   white-space: nowrap;
 }
-.admin-table .player-link {
-  display: inline-flex;
-}
-.admin-pill {
-  margin-left: 8px;
+.admin-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .admin-run {
   font-size: var(--fs-small);

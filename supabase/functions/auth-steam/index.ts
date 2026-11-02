@@ -39,9 +39,10 @@ async function fetchPlayer(steamId: string): Promise<SteamPlayer | null> {
 async function createProfile(admin: SupabaseClient, userId: string, steamId: string, player: SteamPlayer | null) {
   const persona = player?.personaname ?? ''
   const preferred = suggestUsername(persona, steamId, () => false)
-  const { data: similar } = await admin.from('profiles').select('username').like('username', `${preferred}%`)
-  const taken = new Set((similar ?? []).map((row: { username: string }) => row.username))
-  const username = suggestUsername(persona, steamId, (u) => taken.has(u))
+  // Sin distinguir mayúsculas: 'Ren0X1' ya ocupa 'ren0x1' (la base de datos los compara en minúsculas).
+  const { data: similar } = await admin.from('profiles').select('username').ilike('username', `${preferred.replace(/_/g, '\\_')}%`)
+  const taken = new Set((similar ?? []).map((row: { username: string }) => row.username.toLowerCase()))
+  const username = suggestUsername(persona, steamId, (u) => taken.has(u.toLowerCase()))
 
   const { error } = await admin
     .from('profiles')

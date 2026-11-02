@@ -71,6 +71,9 @@ export function runLabel(run: AdminRun | null, now = new Date()): string {
     if (run.total === null) return `Importando biblioteca · empezó ${formatAgo(run.started_at, now)}`
     return `Logros ${run.checked} de ${run.total} juegos · ${run.unlocked.toLocaleString('es')} conseguidos`
   }
-  if (run.status === 'ok') return `Bien ${formatAgo(run.finished_at ?? run.started_at, now)} · ${run.checked} juegos revisados`
+  if (run.status === 'ok') {
+    const hidden = run.hidden_games > 0 ? ` · ${run.hidden_games} ocultos en Steam` : ''
+    return `Bien ${formatAgo(run.finished_at ?? run.started_at, now)} · ${run.checked} juegos revisados${hidden}`
+  }
   return `Falló ${formatAgo(run.started_at, now)} · ${syncErrorMessage({ error: run.error ?? 'server_error' }).split('.')[0]}`
 }

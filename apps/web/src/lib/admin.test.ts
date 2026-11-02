@@ -15,6 +15,7 @@ const run = (extra: Partial<AdminRun>): AdminRun => ({
   total: 300,
   checked: 90,
   unlocked: 12000,
+  hidden_games: 0,
   forced_by: null,
   ...extra,
 })
@@ -27,6 +28,7 @@ describe('runLabel', () => {
     expect(runLabel(run({ status: 'ok', finished_at: '2026-11-02T09:00:00Z', checked: 300 }), NOW)).toBe(
       'Bien hace 3 h · 300 juegos revisados',
     )
+    expect(runLabel(run({ status: 'ok', finished_at: '2026-11-02T09:00:00Z', hidden_games: 12 }), NOW)).toMatch(/ · 12 ocultos en Steam$/)
     expect(runLabel(run({ status: 'error', error: 'achievements_private' }), NOW)).toBe(
       'Falló hace 5 min · Steam no comparte tus logros: pon "Detalles de juego" en Público (no "Solo amigos") en la privacidad de tu perfil de Steam',
     )

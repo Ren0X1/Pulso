@@ -3,6 +3,7 @@ import {
   achievementIconUrl,
   becamePlatinum,
   achievementsPrivate,
+  hiddenForWholeAccount,
   hasUnknownAchievements,
   initialStatus,
   mapSchema,
@@ -235,5 +236,13 @@ describe('hasUnknownAchievements', () => {
     expect(hasUnknownAchievements(player, new Set(['A']))).toBe(true)
     expect(hasUnknownAchievements(player, new Set(['A', 'DLC_1']))).toBe(false)
     expect(hasUnknownAchievements(null, new Set())).toBe(false)
+  })
+})
+
+describe('hiddenForWholeAccount', () => {
+  it('unos pocos juegos ocultos se saltan; si Steam no deja ver ninguno, es la privacidad de la cuenta', () => {
+    expect(hiddenForWholeAccount(30, 12)).toBe(false)
+    expect(hiddenForWholeAccount(0, 1)).toBe(false)
+    expect(hiddenForWholeAccount(0, 30)).toBe(true)
   })
 })

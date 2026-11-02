@@ -166,25 +166,29 @@ function UserRow({
   return (
     <tr>
       <td>
-        <Link to={`/u/${u.username}`} className="player-link">
-          <Avatar name={u.username} src={u.avatar_url} size={28} />
-          <span>{u.username}</span>
-        </Link>
-        {u.is_admin && <span className="pill admin-pill">Admin</span>}
+        <div className="admin-cell">
+          <Link to={`/u/${u.username}`} className="player-link">
+            <Avatar name={u.username} src={u.avatar_url} size={28} />
+            <span>{u.username}</span>
+          </Link>
+          {u.is_admin && <span className="pill">Admin</span>}
+        </div>
       </td>
       <td>
-        {u.steam_id ? (
-          <a href={`https://steamcommunity.com/profiles/${u.steam_id}`} target="_blank" rel="noreferrer">
-            {u.steam_name ?? u.steam_id}
-          </a>
-        ) : (
-          <span className="muted">Sin Steam</span>
-        )}
-        {u.profile_visibility === 'private' && (
-          <span className="pill admin-pill" data-tone="warning">
-            Privado
-          </span>
-        )}
+        <div className="admin-cell">
+          {u.steam_id ? (
+            <a href={`https://steamcommunity.com/profiles/${u.steam_id}`} target="_blank" rel="noreferrer">
+              {u.steam_name ?? u.steam_id}
+            </a>
+          ) : (
+            <span className="muted">Sin Steam</span>
+          )}
+          {u.profile_visibility === 'private' && (
+            <span className="pill" data-tone="warning">
+              Privado
+            </span>
+          )}
+        </div>
       </td>
       <td className="num">{n(u.games)}</td>
       <td className="num">{n(u.achievements)}</td>

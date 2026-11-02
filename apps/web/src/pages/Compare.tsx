@@ -4,6 +4,7 @@ import { Avatar } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import { formatPlaytime, type CatalogGame } from '../lib/library.ts'
 import { compareLibraries, loadComparable, type CommonGame } from '../lib/social.ts'
+import { exactUsername } from '../lib/friends.ts'
 import { supabase } from '../lib/supabase.ts'
 import { Cover } from './Cover.tsx'
 import { EmptyState } from './EmptyState.tsx'
@@ -36,7 +37,7 @@ export function ComparePage() {
 
   useEffect(() => {
     void (async () => {
-      const { data } = await supabase!.from('profiles').select('id, username, avatar_url').eq('username', username.toLowerCase()).maybeSingle()
+      const { data } = await supabase!.from('profiles').select('id, username, avatar_url').ilike('username', exactUsername(username)).maybeSingle()
       const found = (data as Player | null) ?? null
       setOther(found)
       if (!found) return

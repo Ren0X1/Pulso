@@ -15,6 +15,8 @@ export interface SyncRun {
   total: number | null
   checked: number
   unlocked: number
+  /** Juegos cuyos logros oculta Steam (privados en la biblioteca o que ya no son tuyos): se saltan. */
+  hidden_games: number
   /** Si la lanzó un administrador. */
   forced_by: string | null
 }
@@ -73,11 +75,19 @@ export function syncProgressText(run: Pick<SyncRun, 'games' | 'total' | 'checked
 }
 
 /** Resumen de una sincronización terminada. */
-export function syncSummaryText(run: Pick<SyncRun, 'games' | 'added' | 'checked' | 'unlocked'>): string {
-  return `${run.games ?? 0} juegos en Steam · ${run.added} nuevos en tu biblioteca · logros revisados en ${run.checked} juegos (${run.unlocked} conseguidos)`
+export function syncSummaryText(run: Pick<SyncRun, 'games' | 'added' | 'checked' | 'unlocked' | 'hidden_games'>): string {
+  const text = `${run.games ?? 0} juegos en Steam · ${run.added} nuevos en tu biblioteca · logros revisados en ${run.checked} juegos (${run.unlocked} conseguidos)`
+  return run.hidden_games > 0 ? `${text} · ${hiddenText(run.hidden_games)}` : text
 }
 
-export const SYNC_RUN_FIELDS = 'id, status, error, started_at, finished_at, updated_at, games, added, total, checked, unlocked, forced_by'
+/** Juegos que Steam no deja leer, con el porqué (lo más habitual: marcados como privados en tu biblioteca). */
+export function hiddenText(count: number): string {
+  return count === 1
+    ? '1 juego con los logros ocultos en Steam (privado en tu biblioteca o ya no es tuyo)'
+    : `${count} juegos con los logros ocultos en Steam (privados en tu biblioteca o ya no son tuyos)`
+}
+
+export const SYNC_RUN_FIELDS = 'id, status, error, started_at, finished_at, updated_at, games, added, total, checked, unlocked, hidden_games, forced_by'
 
 export async function loadLastSync(): Promise<SyncRun | null> {
   const { data } = await supabase!

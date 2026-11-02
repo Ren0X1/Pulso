@@ -55,7 +55,7 @@ function ProfileForm() {
         label="Nombre de usuario"
         value={username}
         onChange={(e) => setUsername(e.target.value.toLowerCase())}
-        hint="3–20 caracteres: minúsculas, números y _. Tu perfil está en /u/tu-nombre."
+        hint="3–20 caracteres: letras (puedes usar mayúsculas), números y _. Tu perfil está en /u/tu-nombre."
         error={errors.username}
         autoComplete="username"
       />

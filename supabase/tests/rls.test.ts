@@ -205,9 +205,14 @@ describe('catálogo y restricciones', () => {
     await expect(t.db.query(`insert into public.profiles (id, username) values ($1, 'alpha')`, [D])).rejects.toThrow(
       /duplicate key/,
     )
+    // Se admiten mayúsculas, pero dos nombres que solo cambian en mayúsculas son el mismo.
     await expect(t.db.query(`insert into public.profiles (id, username) values ($1, 'Alpha')`, [D])).rejects.toThrow(
+      /duplicate key/,
+    )
+    await expect(t.db.query(`insert into public.profiles (id, username) values ($1, 'al-pha')`, [D])).rejects.toThrow(
       /check constraint/,
     )
+    await t.db.query(`insert into public.profiles (id, username) values ($1, 'DeltaX_1')`, [D])
   })
 
   it('no se puede pedir amistad en nombre de otro ni duplicarla al revés', async () => {
