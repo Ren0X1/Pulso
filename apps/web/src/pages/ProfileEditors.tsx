@@ -13,11 +13,13 @@ import {
   saveLinks,
   setProfileImage,
   uploadProfileImage,
+  type Crop,
   type ProfileImageKind,
 } from '../lib/profile.ts'
 import { supabase } from '../lib/supabase.ts'
 import { Cover } from './Cover.tsx'
 import { LinkIcon } from './ProfileLinks.tsx'
+import { ImageCropper } from './ImageCropper.tsx'
 
 function useProfile(): { profile: Profile; refresh: () => Promise<void> } | null {
   const { state, refreshProfile } = useAuth()
@@ -55,6 +57,8 @@ export function ImagesEditor() {
   const [steamAvatar, setSteamAvatar] = useState<string | null>(null)
   const [busy, setBusy] = useState<ProfileImageKind | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // La imagen elegida espera en el editor de recorte hasta que el usuario la encuadra.
+  const [picked, setPicked] = useState<{ kind: ProfileImageKind; file: File } | null>(null)
 
   useEffect(() => {
     void supabase!
@@ -87,19 +91,19 @@ export function ImagesEditor() {
         {profile.banner_url ? <img src={profile.banner_url} alt="" /> : <span className="muted">Sin banner</span>}
       </div>
       <div className="row-actions">
-        <ImagePicker kind="banner" label={busy === 'banner' ? 'Subiendo…' : 'Cambiar banner'} onPick={(f) => void run('banner', () => uploadProfileImage(profile.id, 'banner', f))} />
+        <ImagePicker kind="banner" label={busy === 'banner' ? 'Subiendo…' : 'Cambiar banner'} onPick={(file) => setPicked({ kind: 'banner', file })} />
         {profile.banner_url && (
           <Button variant="ghost" onClick={() => void run('banner', () => setProfileImage(profile.id, 'banner', null))}>
             Quitar banner
           </Button>
         )}
       </div>
-      <p className="muted kpi-note">Se recorta a 1500 × 500. Mejor una imagen horizontal.</p>
+      <p className="muted kpi-note">Al elegirla puedes moverla y ampliarla para encuadrar lo que quieras enseñar.</p>
 
       <div className="avatar-row">
         <Avatar name={profile.username} src={profile.avatar_url} size={72} />
         <div className="row-actions">
-          <ImagePicker kind="avatar" label={busy === 'avatar' ? 'Subiendo…' : 'Cambiar avatar'} onPick={(f) => void run('avatar', () => uploadProfileImage(profile.id, 'avatar', f))} />
+          <ImagePicker kind="avatar" label={busy === 'avatar' ? 'Subiendo…' : 'Cambiar avatar'} onPick={(file) => setPicked({ kind: 'avatar', file })} />
           {steamAvatar && profile.avatar_url !== steamAvatar && (
             <Button variant="ghost" onClick={() => void run('avatar', () => setProfileImage(profile.id, 'avatar', steamAvatar))}>
               Usar el de Steam
@@ -108,6 +112,18 @@ export function ImagesEditor() {
         </div>
       </div>
       {error && <p className="notice" role="alert">{error}</p>}
+      {picked && (
+        <ImageCropper
+          file={picked.file}
+          kind={picked.kind}
+          onCancel={() => setPicked(null)}
+          onConfirm={(crop: Crop) => {
+            const { kind, file } = picked
+            setPicked(null)
+            void run(kind, () => uploadProfileImage(profile.id, kind, file, crop))
+          }}
+        />
+      )}
     </div>
   )
 }

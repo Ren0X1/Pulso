@@ -54,6 +54,13 @@ export function linkKindFor(url: string): LinkKind {
 
 // ───────── Imágenes: avatar cuadrado y banner 3:1 ─────────
 
+export interface Crop {
+  sx: number
+  sy: number
+  sw: number
+  sh: number
+}
+
 /** Recorte centrado que llena la proporción pedida (como object-fit: cover). */
 export function coverCrop(width: number, height: number, ratioW: number, ratioH: number) {
   const target = ratioW / ratioH
@@ -65,14 +72,15 @@ export function coverCrop(width: number, height: number, ratioW: number, ratioH:
   return { sx: 0, sy: Math.round((height - sh) / 2), sw: width, sh }
 }
 
-const SIZES = { avatar: { w: 256, h: 256 }, banner: { w: 1500, h: 500 } } as const
+export const SIZES = { avatar: { w: 256, h: 256 }, banner: { w: 1500, h: 500 } } as const
 export type ProfileImageKind = keyof typeof SIZES
 
 /** Recorta y reduce la imagen en el navegador y la guarda como WebP (pocos KB, cabe de sobra en el plan gratis). */
-async function toWebp(file: File, kind: ProfileImageKind): Promise<Blob> {
+async function toWebp(file: File, kind: ProfileImageKind, chosen?: Crop): Promise<Blob> {
   const bitmap = await createImageBitmap(file)
   const { w, h } = SIZES[kind]
-  const crop = coverCrop(bitmap.width, bitmap.height, w, h)
+  // El recorte que eligió el usuario en el editor; si no hay, el centro.
+  const crop = chosen ?? coverCrop(bitmap.width, bitmap.height, w, h)
   const canvas = document.createElement('canvas')
   canvas.width = Math.min(w, crop.sw)
   canvas.height = Math.round(canvas.width * (h / w))
@@ -85,9 +93,9 @@ async function toWebp(file: File, kind: ProfileImageKind): Promise<Blob> {
 const BUCKET = 'profile-media'
 
 /** Sube el avatar o el banner a la carpeta del usuario y lo guarda en su perfil. Borra el anterior. */
-export async function uploadProfileImage(userId: string, kind: ProfileImageKind, file: File): Promise<string> {
+export async function uploadProfileImage(userId: string, kind: ProfileImageKind, file: File, crop?: Crop): Promise<string> {
   if (!file.type.startsWith('image/')) throw new Error('not_image')
-  const blob = await toWebp(file, kind)
+  const blob = await toWebp(file, kind, crop)
   const path = `${userId}/${kind}-${Date.now()}.webp`
   const { error } = await supabase!.storage.from(BUCKET).upload(path, blob, { contentType: 'image/webp' })
   if (error) throw error

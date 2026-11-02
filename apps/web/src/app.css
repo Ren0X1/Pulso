@@ -1951,3 +1951,57 @@ a.link-chip:hover {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* ───────── Recortar avatar y banner ───────── */
+
+.cropper {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+}
+.cropper-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--raised);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.cropper-frame:active {
+  cursor: grabbing;
+}
+.cropper-frame[data-kind='avatar'] {
+  border-radius: 50%;
+}
+.cropper-frame img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  pointer-events: none;
+}
+.cropper-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 360px);
+  color: var(--muted);
+  font-size: var(--fs-small);
+}
+.cropper-zoom input {
+  flex: 1;
+  accent-color: var(--text);
+}
+.cropper-hint {
+  font-size: var(--fs-small);
+  text-align: center;
+}
+
+/* Perfil: aire entre el banner y el nombre. */
+.profile-card .profile-head {
+  padding-top: 18px;
+}
+.profile-card .profile-avatar {
+  margin-top: -66px;
+}
