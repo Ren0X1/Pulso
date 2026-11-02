@@ -5,6 +5,7 @@ import {
   achievementsPrivate,
   hiddenForWholeAccount,
   steamDownForBatch,
+  playerStatsStatus,
   hasUnknownAchievements,
   initialStatus,
   mapSchema,
@@ -254,5 +255,15 @@ describe('steamDownForBatch', () => {
     expect(steamDownForBatch(1, 30)).toBe(false)
     expect(steamDownForBatch(30, 30)).toBe(true)
     expect(steamDownForBatch(1, 1)).toBe(false)
+  })
+})
+
+describe('playerStatsStatus', () => {
+  it('distingue un juego sin logros de una respuesta de Steam con error', () => {
+    expect(playerStatsStatus({ playerstats: { success: true, achievements: [] } })).toBe('ok')
+    expect(playerStatsStatus({ playerstats: { error: 'Requested app has no stats', success: false } })).toBe('no_stats')
+    expect(playerStatsStatus(null)).toBe('no_stats')
+    expect(playerStatsStatus({ playerstats: { error: 'Rate limit', success: false } })).toBe('error')
+    expect(playerStatsStatus({})).toBe('error')
   })
 })

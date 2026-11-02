@@ -10,7 +10,12 @@ export function NewsList({ news, names }: { news: NewsItem[] | null; names?: Map
       {news.map((n) => (
         <li key={n.url}>
           <a className="news-item" href={n.url} target="_blank" rel="noreferrer">
-            {n.image ? <img className="news-image" src={n.image} alt="" loading="lazy" /> : <span className="news-image" aria-hidden="true" />}
+            <img
+              className="news-image"
+              src={n.image ?? `https://cdn.cloudflare.steamstatic.com/steam/apps/${n.appid}/header.jpg`}
+              alt=""
+              loading="lazy"
+            />
             <span className="news-text">
               <span className="news-title">{n.title}</span>
               <span className="muted news-meta">

@@ -139,7 +139,7 @@ function Week({ days, pulsoMinutes }: { days: WeekDay[] | null; pulsoMinutes: nu
           <ol className="week-bars" aria-label="Minutos jugados por día">
             {days.map((d) => (
               <li key={d.label} data-today={d.today || undefined} title={`${shortHours(d.minutes)}`}>
-                <span className="week-bar" style={{ height: `${Math.max(4, Math.round((d.minutes / max) * 100))}%` }} />
+                <span className="week-bar" style={{ height: d.minutes ? `${Math.max(6, Math.round((d.minutes / max) * 100))}%` : '2px' }} />
                 <span className="week-day">{d.label}</span>
                 <span className="visually-hidden">{shortHours(d.minutes)}</span>
               </li>

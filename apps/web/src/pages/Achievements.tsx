@@ -51,8 +51,8 @@ export function AchievementsPage() {
         </div>
         <SyncSteam onSynced={() => void reload()} />
         <p className="muted kpi-note">
-          Solo cuentan los logros verificados en Steam. Cada sincronización revisa 25 juegos más, empezando por los que has
-          jugado últimamente.
+          Solo cuentan los logros verificados en Steam. Cada sincronización revisa todos tus juegos, y Pulso sincroniza solo
+          al abrirlo si hace más de 6 h de la última.
         </p>
       </section>
 

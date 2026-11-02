@@ -16,6 +16,7 @@ import {
   hasUnknownAchievements,
   hiddenForWholeAccount,
   steamDownForBatch,
+  playerStatsStatus,
   initialStatus,
   mapSchema,
   mapUnlocked,
@@ -215,6 +216,12 @@ async function syncAchievements(
       let player: unknown
       try {
         player = await steam('ISteamUserStats/GetPlayerAchievements/v1/', { steamid: steamId, appid: game.appid })
+        if (playerStatsStatus(player) === 'error') {
+          // Steam respondió "bien" pero con un error dentro: este juego no se ha leído (se reintenta la próxima vez).
+          const message = (player as { playerstats?: { error?: string } } | null)?.playerstats?.error ?? 'sin datos'
+          console.error('steam-sync playerstats', String(message).slice(0, 80))
+          throw new SyncError('steam_unavailable')
+        }
         read++
       } catch (err) {
         if (!(err instanceof SyncError && err.code === 'achievements_private')) throw err

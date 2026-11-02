@@ -66,7 +66,7 @@ export function feedText(event: Pick<FeedEvent, 'kind' | 'payload'>, gameName: s
     case 'played':
       return `ha jugado a ${gameName} · ${duration(event.payload.minutes)}`
     case 'platinum':
-      return `ha conseguido el platino de ${gameName} (${event.payload.achievements} logros)`
+      return `ha conseguido el platino de ${gameName} (${event.payload.achievements} ${event.payload.achievements === 1 ? 'logro' : 'logros'})`
     default:
       return `ha hecho algo en ${gameName}`
   }

@@ -22,6 +22,8 @@ export function newsExcerpt(contents: string, max = 220): string {
     .replace(/<[^>]+>/g, ' ')
     .replace(/\{STEAM_CLAN_IMAGE\}\S*/g, ' ')
     .replace(/https?:\/\/\S+/g, ' ')
+    // Steam escapa los corchetes del texto con una barra (\[): se quita.
+    .replace(/\\(.)/g, '$1')
     .replace(/\s+/g, ' ')
     .trim()
   if (text.length <= max) return text

@@ -37,6 +37,7 @@ describe('feedText', () => {
 
   it('platino nuevo', () => {
     expect(feedText({ kind: 'platinum', payload: { achievements: 42 } }, 'Elden Ring')).toBe('ha conseguido el platino de Elden Ring (42 logros)')
+    expect(feedText({ kind: 'platinum', payload: { achievements: 1 } }, 'Counter-Strike 2')).toBe('ha conseguido el platino de Counter-Strike 2 (1 logro)')
   })
 })
 

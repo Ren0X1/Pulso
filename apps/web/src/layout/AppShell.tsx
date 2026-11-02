@@ -87,8 +87,8 @@ export function AppShell() {
   }, [recount, location.pathname])
   useLive([me && userTopic(me)], recount)
 
-  // Inicio no lleva título: su cabecera es el juego al que estás jugando.
-  const home = location.pathname === '/'
+  // Inicio, la ficha de un juego y los perfiles no llevan título: su cabecera ya dice qué es.
+  const ownHeader = location.pathname === '/' || /^\/(juego|u)\//.test(location.pathname)
 
   return (
     <div className="shell">
@@ -134,7 +134,7 @@ export function AppShell() {
             <UpdateBanner />
           </Suspense>
         )}
-        {!home && <h1 className="page-title">{title}</h1>}
+        {!ownHeader && <h1 className="page-title">{title}</h1>}
         <Outlet />
       </main>
 

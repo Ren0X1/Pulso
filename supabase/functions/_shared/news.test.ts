@@ -7,6 +7,10 @@ describe('newsExcerpt', () => {
     expect(newsExcerpt(raw)).toBe('Parche 9 Nuevo modo cooperativo. Más cosas.')
   })
 
+  it('quita las barras con las que Steam escapa el texto', () => {
+    expect(newsExcerpt('\\Added an option \\[beta\\]')).toBe('Added an option [beta]')
+  })
+
   it('recorta por palabras con puntos suspensivos', () => {
     expect(newsExcerpt('uno dos tres cuatro cinco', 12)).toBe('uno dos tres…')
   })

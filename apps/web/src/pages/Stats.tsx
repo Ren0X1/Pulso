@@ -68,7 +68,7 @@ export function StatsPage() {
           </div>
         </div>
         <p className="muted kpi-note">
-          Horas de Steam (las de los juegos añadidos a mano no cuentan). Los logros se revisan 25 juegos por sincronización.
+          Horas de Steam (las de los juegos añadidos a mano no cuentan). Cada sincronización revisa los logros de todos tus juegos.
         </p>
       </section>
 

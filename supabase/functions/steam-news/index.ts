@@ -24,7 +24,8 @@ const json = (body: unknown, status = 200) =>
 
 async function newsFor(appid: number) {
   try {
-    const query = new URLSearchParams({ appid: String(appid), count: '8', maxlength: '600', feeds: 'steam_community_announcements', format: 'json' })
+    const query = new URLSearchParams({ appid: String(appid), count: '8', maxlength: '0', feeds: 'steam_community_announcements', format: 'json' })
+    // maxlength 0 = el anuncio completo: recortado, Steam le quita el formato y con él las imágenes.
     const res = await fetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?${query}`)
     return res.ok ? parseNews(appid, await res.json()) : []
   } catch {

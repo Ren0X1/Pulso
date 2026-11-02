@@ -91,6 +91,17 @@ export function hiddenForWholeAccount(read: number, hidden: number): boolean {
   return read === 0 && hidden >= 3
 }
 
+/**
+ * Cómo ha ido GetPlayerAchievements: bien, el juego no tiene logros (o Steam respondió 400 y llega null), u otro
+ * error dentro de una respuesta "correcta" (pasa cuando Steam va saturado): ese juego no se ha podido leer.
+ */
+export function playerStatsStatus(player: unknown): 'ok' | 'no_stats' | 'error' {
+  if (player === null) return 'no_stats'
+  const stats = (player as { playerstats?: { success?: boolean; error?: string } } | undefined)?.playerstats
+  if (stats?.success) return 'ok'
+  return stats?.error === 'Requested app has no stats' ? 'no_stats' : 'error'
+}
+
 /** Un juego suelto que da error se salta; si fallan todos los de una tanda (al menos 3), Steam está caído. */
 export function steamDownForBatch(failed: number, size: number): boolean {
   return size >= 3 && failed === size
