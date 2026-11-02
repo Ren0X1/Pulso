@@ -91,6 +91,11 @@ export function hiddenForWholeAccount(read: number, hidden: number): boolean {
   return read === 0 && hidden >= 3
 }
 
+/** Un juego suelto que da error se salta; si fallan todos los de una tanda (al menos 3), Steam está caído. */
+export function steamDownForBatch(failed: number, size: number): boolean {
+  return size >= 3 && failed === size
+}
+
 /** Logros que el jugador tiene en Steam y Pulso aún no conoce (el juego ha añadido logros): hay que releer la lista. */
 export function hasUnknownAchievements(player: unknown, known: Set<string>): boolean {
   const list = (player as { playerstats?: { achievements?: { apiname: string }[] } } | null)?.playerstats?.achievements ?? []

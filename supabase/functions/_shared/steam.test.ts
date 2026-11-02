@@ -4,6 +4,7 @@ import {
   becamePlatinum,
   achievementsPrivate,
   hiddenForWholeAccount,
+  steamDownForBatch,
   hasUnknownAchievements,
   initialStatus,
   mapSchema,
@@ -245,5 +246,13 @@ describe('hiddenForWholeAccount', () => {
     expect(hiddenForWholeAccount(30, 12)).toBe(false)
     expect(hiddenForWholeAccount(0, 1)).toBe(false)
     expect(hiddenForWholeAccount(0, 30)).toBe(true)
+  })
+})
+
+describe('steamDownForBatch', () => {
+  it('un juego que falla se salta; si falla la tanda entera, Steam no responde', () => {
+    expect(steamDownForBatch(1, 30)).toBe(false)
+    expect(steamDownForBatch(30, 30)).toBe(true)
+    expect(steamDownForBatch(1, 1)).toBe(false)
   })
 })

@@ -17,6 +17,8 @@ export interface SyncRun {
   unlocked: number
   /** Juegos cuyos logros oculta Steam (privados en la biblioteca o que ya no son tuyos): se saltan. */
   hidden_games: number
+  /** Juegos que Steam no dejó leer esta vez (errores suyos): se reintentan en la próxima sincronización. */
+  skipped_games: number
   /** Si la lanzó un administrador. */
   forced_by: string | null
 }
@@ -75,9 +77,19 @@ export function syncProgressText(run: Pick<SyncRun, 'games' | 'total' | 'checked
 }
 
 /** Resumen de una sincronización terminada. */
-export function syncSummaryText(run: Pick<SyncRun, 'games' | 'added' | 'checked' | 'unlocked' | 'hidden_games'>): string {
-  const text = `${run.games ?? 0} juegos en Steam · ${run.added} nuevos en tu biblioteca · logros revisados en ${run.checked} juegos (${run.unlocked} conseguidos)`
-  return run.hidden_games > 0 ? `${text} · ${hiddenText(run.hidden_games)}` : text
+export function syncSummaryText(run: Pick<SyncRun, 'games' | 'added' | 'checked' | 'unlocked' | 'hidden_games' | 'skipped_games'>): string {
+  const parts = [
+    `${run.games ?? 0} juegos en Steam · ${run.added} nuevos en tu biblioteca · logros revisados en ${run.checked} juegos (${run.unlocked} conseguidos)`,
+  ]
+  if (run.hidden_games > 0) parts.push(hiddenText(run.hidden_games))
+  if (run.skipped_games > 0) {
+    parts.push(
+      run.skipped_games === 1
+        ? 'Steam no dejó leer 1 juego: se reintentará en la próxima sincronización'
+        : `Steam no dejó leer ${run.skipped_games} juegos: se reintentarán en la próxima sincronización`,
+    )
+  }
+  return parts.join(' · ')
 }
 
 /** Juegos que Steam no deja leer, con el porqué (lo más habitual: marcados como privados en tu biblioteca). */
@@ -97,7 +109,7 @@ export function shouldAutoSync(last: Pick<SyncRun, 'status' | 'started_at'> | nu
   return now.getTime() - new Date(last.started_at).getTime() >= AUTO_SYNC_HOURS * 3_600_000
 }
 
-export const SYNC_RUN_FIELDS = 'id, status, error, started_at, finished_at, updated_at, games, added, total, checked, unlocked, hidden_games, forced_by'
+export const SYNC_RUN_FIELDS = 'id, status, error, started_at, finished_at, updated_at, games, added, total, checked, unlocked, hidden_games, skipped_games, forced_by'
 
 export async function loadLastSync(): Promise<SyncRun | null> {
   const { data } = await supabase!

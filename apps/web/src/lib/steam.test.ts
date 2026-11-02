@@ -8,11 +8,17 @@ describe('progreso de la sincronización', () => {
   })
 
   it('resume una sincronización terminada', () => {
-    expect(syncSummaryText({ games: 385, added: 3, checked: 300, unlocked: 40123, hidden_games: 0 })).toBe(
+    expect(syncSummaryText({ games: 385, added: 3, checked: 300, unlocked: 40123, hidden_games: 0, skipped_games: 0 })).toBe(
       '385 juegos en Steam · 3 nuevos en tu biblioteca · logros revisados en 300 juegos (40123 conseguidos)',
     )
-    expect(syncSummaryText({ games: 385, added: 0, checked: 290, unlocked: 40000, hidden_games: 12 })).toMatch(
+    expect(syncSummaryText({ games: 385, added: 0, checked: 290, unlocked: 40000, hidden_games: 12, skipped_games: 0 })).toMatch(
       / · 12 juegos con los logros ocultos en Steam \(privados en tu biblioteca o ya no son tuyos\)$/,
+    )
+  })
+
+  it('avisa de los juegos que Steam no dejó leer y que se reintentarán', () => {
+    expect(syncSummaryText({ games: 391, added: 0, checked: 391, unlocked: 21000, hidden_games: 0, skipped_games: 3 })).toMatch(
+      / · Steam no dejó leer 3 juegos: se reintentarán en la próxima sincronización$/,
     )
   })
 

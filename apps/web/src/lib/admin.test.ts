@@ -16,6 +16,7 @@ const run = (extra: Partial<AdminRun>): AdminRun => ({
   checked: 90,
   unlocked: 12000,
   hidden_games: 0,
+  skipped_games: 0,
   forced_by: null,
   ...extra,
 })

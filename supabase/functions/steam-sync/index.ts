@@ -15,6 +15,7 @@ import {
   becamePlatinum,
   hasUnknownAchievements,
   hiddenForWholeAccount,
+  steamDownForBatch,
   initialStatus,
   mapSchema,
   mapUnlocked,
@@ -165,12 +166,18 @@ async function loadSchema(admin: SupabaseClient, game: OwnedGame, gameId: number
   return data ?? []
 }
 
-async function syncAchievements(admin: SupabaseClient, userId: string, steamId: string, games: OwnedGame[], gameIdByApp: Map<number, number>) {
+async function syncAchievements(
+  admin: SupabaseClient,
+  userId: string,
+  steamId: string,
+  games: OwnedGame[],
+  gameIdByApp: Map<number, number>,
+  tolerate: boolean,
+) {
   let unlocked = 0
   let read = 0
   let hidden = 0
-  await pool(games, 6, async (game) => {
-    const gameId = gameIdByApp.get(game.appid)!
+  const syncGame = async (game: OwnedGame, gameId: number) => {
     let { data: known } = await admin.from('achievements').select('id, api_name').eq('game_id', gameId)
     if (!known?.length) known = await loadSchema(admin, game, gameId)
     if (known?.length) {
@@ -209,13 +216,30 @@ async function syncAchievements(admin: SupabaseClient, userId: string, steamId: 
         }
       }
     }
-    await admin
-      .from('user_games')
-      .update({ achievements_synced_at: new Date().toISOString() })
-      .eq('user_id', userId)
-      .eq('game_id', gameId)
+  }
+  const markChecked = (gameIds: number[]) =>
+    gameIds.length
+      ? admin.from('user_games').update({ achievements_synced_at: new Date().toISOString() }).eq('user_id', userId).in('game_id', gameIds)
+      : null
+  const failedIds: number[] = []
+  await pool(games, 6, async (game) => {
+    const gameId = gameIdByApp.get(game.appid)!
+    try {
+      await syncGame(game, gameId)
+      await markChecked([gameId])
+    } catch (err) {
+      // Steam da error 500 con algunos juegos sueltos (sin logros, retirados): ese juego se salta y se reintenta
+      // en la próxima sincronización, en vez de parar todas.
+      if (!(err instanceof SyncError && err.code === 'steam_unavailable')) throw err
+      failedIds.push(gameId)
+    }
   })
-  return { unlocked, read, hidden }
+  const failed = failedIds.length
+  // Si falla la tanda entera, es Steam el que no responde: la tanda se reintenta (sin marcarlos, para que el
+  // reintento los vuelva a pedir). En el último intento (`tolerate`) se dan por saltados y se sigue con los demás.
+  if (!tolerate && steamDownForBatch(failed, games.length)) throw new SyncError('steam_unavailable')
+  await markChecked(failedIds)
+  return { unlocked, read, hidden, failed }
 }
 
 interface RunRow {
@@ -226,6 +250,7 @@ interface RunRow {
   unlocked: number
   read_games: number
   hidden_games: number
+  skipped_games: number
 }
 
 async function steamIdOf(admin: SupabaseClient, userId: string): Promise<string | null> {
@@ -239,7 +264,7 @@ async function steamIdOf(admin: SupabaseClient, userId: string): Promise<string 
 }
 
 /** Una tanda: la primera importa también el perfil, la biblioteca y las horas. */
-async function runBatch(admin: SupabaseClient, run: RunRow, first: boolean) {
+async function runBatch(admin: SupabaseClient, run: RunRow, first: boolean, tolerate = false) {
   const steamId = await steamIdOf(admin, run.user_id)
   if (!steamId) throw new Error('no_steam_account')
 
@@ -275,10 +300,10 @@ async function runBatch(admin: SupabaseClient, run: RunRow, first: boolean) {
     state = known
   }
   const { batch, total, remaining } = nextAchievementBatch(owned, state.syncedAt, new Date(run.started_at))
-  const { unlocked, read, hidden } = await syncAchievements(admin, run.user_id, steamId, batch, state.gameIdByApp)
+  const { unlocked, read, hidden, failed } = await syncAchievements(admin, run.user_id, steamId, batch, state.gameIdByApp, tolerate)
   // Si Steam no deja ver los logros de ningún juego, son los detalles de juego de la cuenta: se dice qué cambiar.
   if (hiddenForWholeAccount(run.read_games + read, run.hidden_games + hidden)) throw new SyncError('achievements_private')
-  return { games: parsed.games.length, added: state.added, total, checked: total - remaining, remaining, unlocked, read, hidden }
+  return { games: parsed.games.length, added: state.added, total, checked: total - remaining, remaining, unlocked, read, hidden, failed }
 }
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -307,17 +332,18 @@ async function processStep(admin: SupabaseClient, runId: number, step: number) {
     .eq('id', runId)
     .eq('status', 'running')
     .eq('step', step)
-    .select('id, user_id, started_at, added, unlocked, games, read_games, hidden_games')
+    .select('id, user_id, started_at, added, unlocked, games, read_games, hidden_games, skipped_games')
     .maybeSingle()
   if (!run) return
 
   try {
     let result
-    // Steam falla a veces de forma pasajera: hasta 3 intentos antes de dar la sincronización por fallida.
+    // Steam falla a veces de forma pasajera: hasta 3 intentos. En el tercero, si la biblioteca ya está importada,
+    // los juegos que sigan fallando se saltan (se reintentan en la próxima sincronización) en vez de parar todo.
     for (let attempt = 1; ; attempt++) {
       try {
         // Hasta que una tanda no termina bien, la biblioteca no está importada: esa tanda la importa.
-        result = await runBatch(admin, run as RunRow, run.games === null)
+        result = await runBatch(admin, run as RunRow, run.games === null, attempt === 3 && run.games !== null)
         break
       } catch (err) {
         const permanent = err instanceof SyncError && err.code !== 'steam_unavailable'
@@ -337,6 +363,7 @@ async function processStep(admin: SupabaseClient, runId: number, step: number) {
         unlocked: run.unlocked + result.unlocked,
         read_games: run.read_games + result.read,
         hidden_games: run.hidden_games + result.hidden,
+        skipped_games: run.skipped_games + result.failed,
         updated_at: now,
         ...(done ? { status: 'ok', finished_at: now } : {}),
       })
