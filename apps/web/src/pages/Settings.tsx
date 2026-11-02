@@ -54,7 +54,7 @@ function ProfileForm() {
       <Field
         label="Nombre de usuario"
         value={username}
-        onChange={(e) => setUsername(e.target.value.toLowerCase())}
+        onChange={(e) => setUsername(e.target.value)}
         hint="3–20 caracteres: letras (puedes usar mayúsculas), números y _. Tu perfil está en /u/tu-nombre."
         error={errors.username}
         autoComplete="username"
