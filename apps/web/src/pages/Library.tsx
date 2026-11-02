@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { Grid2x2, HardDrive, List, Star } from 'lucide-react'
 import { Button, Field } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
@@ -18,7 +18,6 @@ import {
   type LibrarySort,
 } from '../lib/library.ts'
 import { AddGameDialog } from './AddGameDialog.tsx'
-import { EntryDialog } from './EntryDialog.tsx'
 import { Cover } from './Cover.tsx'
 import { PlatinumBadge } from './Platinum.tsx'
 import { gameIdsForAppIds, installedGames, steamAppId, type InstalledGame } from '../lib/desktop.ts'
@@ -39,7 +38,8 @@ export function LibraryPage() {
   const [tags, setTags] = useState<string[]>([])
   const [error, setError] = useState(false)
   const [adding, setAdding] = useState(false)
-  const [editing, setEditing] = useState<LibraryEntry | null>(null)
+  // Cada juego abre su ficha.
+  const navigate = useNavigate()
   const [q, setQ] = useState(params.q)
   const [platinums, setPlatinums] = useState<Set<number>>(new Set())
 
@@ -165,7 +165,7 @@ export function LibraryPage() {
         <ul className="cover-grid">
           {data.rows.map((entry) => (
             <li key={entry.game_id}>
-              <button type="button" className="cover-card" onClick={() => setEditing(entry)}>
+              <button type="button" className="cover-card" onClick={() => navigate(`/juego/${entry.game_id}`)}>
                 <Cover game={entry.game} platinum={platinums.has(entry.game_id)} />
                 <span className="cover-name">{entry.game.name}</span>
                 <span className="cover-meta">
@@ -194,7 +194,7 @@ export function LibraryPage() {
             {data.rows.map((entry) => (
               <tr key={entry.game_id}>
                 <td>
-                  <button type="button" className="row-game" onClick={() => setEditing(entry)}>
+                  <button type="button" className="row-game" onClick={() => navigate(`/juego/${entry.game_id}`)}>
                     <Cover game={entry.game} small />
                     <span>{entry.game.name}</span>
                     {platinums.has(entry.game_id) && <PlatinumBadge />}
@@ -224,14 +224,6 @@ export function LibraryPage() {
         userId={me}
         onClose={() => setAdding(false)}
         onAdded={() => void reload()}
-      />
-      <EntryDialog
-        entry={editing}
-        userId={me}
-        knownTags={tags}
-        installed={editing ? (installed.get(steamAppId(editing.game.external) ?? -1) ?? null) : null}
-        onClose={() => setEditing(null)}
-        onChanged={() => void reload()}
       />
     </div>
   )

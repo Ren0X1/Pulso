@@ -46,6 +46,8 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, 'content-type': 'application/json' } })
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 class SyncError extends Error {
   constructor(readonly code: SteamSyncError) {
     super(code)
@@ -54,15 +56,29 @@ class SyncError extends Error {
 
 async function steam(path: string, params: Record<string, string | number>): Promise<unknown> {
   const query = new URLSearchParams({ key: STEAM_API_KEY, format: 'json', ...params } as Record<string, string>)
-  const res = await fetch(`${API}/${path}?${query}`)
-  // Steam responde 400/403 a los logros de un juego que no los tiene o de un perfil privado.
-  if (res.status === 400 || res.status === 403) {
-    // Los detalles de juego no son públicos: no se verá ningún logro, así que se avisa en vez de seguir a ciegas.
-    if (achievementsPrivate(await res.json().catch(() => null))) throw new SyncError('achievements_private')
-    return null
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${API}/${path}?${query}`).catch(() => null)
+    // Steam responde 400/403 a los logros de un juego que no los tiene o de un perfil privado.
+    if (res && (res.status === 400 || res.status === 403)) {
+      // Los detalles de juego no son públicos: no se verá ningún logro, así que se avisa en vez de seguir a ciegas.
+      if (achievementsPrivate(await res.json().catch(() => null))) throw new SyncError('achievements_private')
+      return null
+    }
+    if (res?.ok) return res.json()
+    const status = res?.status ?? 0
+    await res?.body?.cancel()
+    // 429 = demasiadas llamadas seguidas: Steam pide esperar. Se espera (lo que diga, o cada vez más) y se reintenta.
+    // Un 5xx suelto se reintenta una vez: con algunos juegos Steam siempre responde 500 y no vale la pena insistir.
+    const retries = status === 429 ? 4 : 1
+    if (attempt < retries) {
+      const after = Number(res?.headers.get('retry-after'))
+      await wait(after > 0 ? Math.min(after, 30) * 1000 : [1500, 4000, 10_000, 20_000][attempt]!)
+      continue
+    }
+    // Solo el método de la API y el código HTTP: nunca la clave ni el SteamID.
+    console.error('steam-sync http', path.split('/')[1], status)
+    throw new SyncError('steam_unavailable')
   }
-  if (!res.ok) throw new SyncError('steam_unavailable')
-  return res.json()
 }
 
 /** Ejecuta las tareas de `limit` en `limit`, para no disparar cientos de llamadas a la vez. */
@@ -71,6 +87,17 @@ async function pool<T>(items: T[], limit: number, task: (item: T) => Promise<voi
   await Promise.all(Array.from({ length: limit }, async () => {
     for (let item = queue.shift(); item !== undefined; item = queue.shift()) await task(item)
   }))
+}
+
+/** La API de la base de datos devuelve como mucho 1000 filas: se piden de 1000 en 1000 hasta el final. */
+async function allRows<T>(page: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: { code?: string } | null }>): Promise<T[]> {
+  const out: T[] = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await page(from, from + 999)
+    if (error) throw new Error(`rows: ${error.code}`)
+    out.push(...((data ?? []) as T[]))
+    if (!data || data.length < 1000) return out
+  }
 }
 
 const chunk = <T,>(list: T[], size: number) =>
@@ -113,8 +140,10 @@ async function importGames(admin: SupabaseClient, userId: string, owned: OwnedGa
     )
   }
 
-  const { data: existing } = await admin.from('user_games').select('game_id, achievements_synced_at').eq('user_id', userId)
-  const have = new Map((existing ?? []).map((r) => [r.game_id as number, r.achievements_synced_at as string | null]))
+  const existing = await allRows<{ game_id: number; achievements_synced_at: string | null }>((from, to) =>
+    admin.from('user_games').select('game_id, achievements_synced_at').eq('user_id', userId).order('game_id').range(from, to),
+  )
+  const have = new Map(existing.map((r) => [r.game_id, r.achievements_synced_at]))
 
   const rows = owned.map((g) => ({
     user_id: userId,
@@ -146,8 +175,10 @@ async function importGames(admin: SupabaseClient, userId: string, owned: OwnedGa
 /** Para continuar una sincronización: los ids de Pulso de los juegos y cuándo se revisaron sus logros. */
 async function knownGames(admin: SupabaseClient, userId: string, owned: OwnedGame[]) {
   const gameIdByApp = await gameIdsByApp(admin, owned)
-  const { data } = await admin.from('user_games').select('game_id, achievements_synced_at').eq('user_id', userId)
-  const have = new Map((data ?? []).map((r) => [r.game_id as number, r.achievements_synced_at as string | null]))
+  const rows = await allRows<{ game_id: number; achievements_synced_at: string | null }>((from, to) =>
+    admin.from('user_games').select('game_id, achievements_synced_at').eq('user_id', userId).order('game_id').range(from, to),
+  )
+  const have = new Map(rows.map((r) => [r.game_id, r.achievements_synced_at]))
   // Un juego comprado a mitad de la sincronización aún no tiene id: entra en la próxima.
   const ready = owned.filter((g) => gameIdByApp.has(g.appid))
   return { gameIdByApp, added: 0, owned: ready, syncedAt: syncedAtByApp(ready, gameIdByApp, have) }
@@ -251,6 +282,27 @@ interface RunRow {
   read_games: number
   hidden_games: number
   skipped_games: number
+  games: number | null
+}
+
+/** La biblioteca de Steam del usuario tal como quedó importada en la primera tanda (sin volver a pedirla). */
+async function libraryFromDb(admin: SupabaseClient, userId: string): Promise<OwnedGame[]> {
+  type Row = { playtime_minutes: number | null; game: { name: string; external: { source: string; external_id: string }[] } }
+  const rows = await allRows<Row>((from, to) =>
+    admin
+      .from('user_games')
+      .select('playtime_minutes, game:games!inner(name, external:game_external_ids(source, external_id))')
+      .eq('user_id', userId)
+      .eq('source', 'steam')
+      .order('game_id')
+      .range(from, to),
+  )
+  return rows.flatMap((r) => {
+    const appid = Number(r.game.external.find((e) => e.source === 'steam')?.external_id)
+    if (!appid) return []
+    // Lo que importa aquí es qué juegos revisar; la marca de "tiene logros" no se guarda, así que todos cuentan.
+    return [{ appid, name: r.game.name, playtime_forever: r.playtime_minutes ?? 0, has_community_visible_stats: true }]
+  })
 }
 
 async function steamIdOf(admin: SupabaseClient, userId: string): Promise<string | null> {
@@ -283,30 +335,32 @@ async function runBatch(admin: SupabaseClient, run: RunRow, first: boolean, tole
     if (!visible) throw new SyncError('profile_private')
   }
 
-  // Con los gratuitos y los retirados de la tienda: Steam los esconde por defecto y también tienen logros.
-  const parsed = parseOwnedGames(
-    await steam('IPlayerService/GetOwnedGames/v1/', { steamid: steamId, include_appinfo: 1, include_played_free_games: 1, include_free_sub: 1, skip_unvetted_apps: 0 }),
-  )
-  if (!parsed.ok) throw new SyncError(parsed.error)
-
-  // La biblioteca y las horas, completas, en la primera tanda; en las siguientes basta con saber los ids.
-  let owned = parsed.games
+  // La biblioteca y las horas, completas, en la primera tanda (pidiéndolas a Steam). En las siguientes se leen de
+  // la base de datos: así cada tanda hace menos llamadas a Steam y no se llega a su límite.
+  let owned: OwnedGame[]
   let state
+  let games: number
   if (first) {
+    // Con los gratuitos y los retirados de la tienda: Steam los esconde por defecto y también tienen logros.
+    const parsed = parseOwnedGames(
+      await steam('IPlayerService/GetOwnedGames/v1/', { steamid: steamId, include_appinfo: 1, include_played_free_games: 1, include_free_sub: 1, skip_unvetted_apps: 0 }),
+    )
+    if (!parsed.ok) throw new SyncError(parsed.error)
+    owned = parsed.games
+    games = owned.length
     state = await importGames(admin, run.user_id, owned)
   } else {
-    const known = await knownGames(admin, run.user_id, owned)
-    owned = known.owned
-    state = known
+    owned = await libraryFromDb(admin, run.user_id)
+    games = run.games ?? owned.length
+    state = await knownGames(admin, run.user_id, owned)
+    owned = state.owned
   }
   const { batch, total, remaining } = nextAchievementBatch(owned, state.syncedAt, new Date(run.started_at))
   const { unlocked, read, hidden, failed } = await syncAchievements(admin, run.user_id, steamId, batch, state.gameIdByApp, tolerate)
   // Si Steam no deja ver los logros de ningún juego, son los detalles de juego de la cuenta: se dice qué cambiar.
   if (hiddenForWholeAccount(run.read_games + read, run.hidden_games + hidden)) throw new SyncError('achievements_private')
-  return { games: parsed.games.length, added: state.added, total, checked: total - remaining, remaining, unlocked, read, hidden, failed }
+  return { games, added: state.added, total, checked: total - remaining, remaining, unlocked, read, hidden, failed }
 }
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** Pide a esta misma función la tanda siguiente; solo espera a que la acepte, no a que termine. */
 async function chain(runId: number, step: number) {

@@ -60,3 +60,10 @@ describe('progreso de la sincronización', () => {
     expect(await t.as({ user: ADMIN }, 'select checked from public.sync_runs')).toEqual([])
   })
 })
+
+describe('horas jugadas con Pulso', () => {
+  it('suma los minutos de las partidas registradas de cada jugador', async () => {
+    await t.db.query(`insert into public.activity_events (user_id, kind, payload) values ($1, 'played', '{"minutes": 90}'), ($1, 'played', '{"minutes": 30}'), ($1, 'platinum', '{}')`, [USER])
+    expect(await t.as({ user: USER }, 'select minutes from public.pulso_playtime where user_id = $1', [USER])).toEqual([{ minutes: 120 }])
+  })
+})

@@ -9,6 +9,7 @@ import { countUnread } from '../lib/social.ts'
 import { isAdmin } from '../lib/admin.ts'
 import { loadLastSync, shouldAutoSync, startSync } from '../lib/steam.ts'
 import { isDesktop } from '../lib/platform.ts'
+import { levelFor, loadPulsoMinutes } from '../lib/level.ts'
 import { NowPlaying } from './NowPlaying.tsx'
 
 const desktop = isDesktop()
@@ -59,9 +60,11 @@ export function AppShell() {
   const [incoming, setIncoming] = useState(0)
   const [unread, setUnread] = useState(0)
   const [admin, setAdmin] = useState(false)
+  const [level, setLevel] = useState<number | null>(null)
 
   useEffect(() => {
     if (me) void isAdmin(me).then(setAdmin, () => setAdmin(false))
+    if (me) void loadPulsoMinutes(me).then((m) => setLevel(levelFor(m).level), () => setLevel(null))
   }, [me])
 
   // Al abrir Pulso, la biblioteca y los logros se ponen al día solos (sigue en el servidor aunque se cierre).
@@ -116,6 +119,7 @@ export function AppShell() {
             <NavLink to={profilePath} className="account-link">
               <Avatar name={profile.username} src={profile.avatar_url} size={32} />
               <span className="account-name">{profile.username}</span>
+              {level !== null && <span className="account-level" title="Nivel Pulso: sube con las horas jugadas desde el launcher">Nv {level}</span>}
             </NavLink>
             <button type="button" className="icon-button" onClick={() => void signOut()} aria-label="Cerrar sesión">
               <LogOut size={18} strokeWidth={1.75} aria-hidden="true" />

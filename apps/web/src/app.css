@@ -587,7 +587,7 @@ a.p-button {
 .cover {
   display: block;
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 2 / 3;
   border-radius: var(--radius-cover);
   background: var(--surface);
   object-fit: cover;
@@ -1013,6 +1013,7 @@ a.p-button {
   font-size: var(--fs-small);
 }
 .kpi-value {
+  font-family: var(--font-mono);
   font-size: var(--fs-kpi);
   font-weight: 600;
   line-height: 32px;
@@ -1367,7 +1368,7 @@ a.p-button {
 }
 .profile-banner {
   aspect-ratio: 3 / 1;
-  max-height: 260px;
+  max-height: 340px;
   width: 100%;
   background: var(--raised);
 }
@@ -2004,4 +2005,226 @@ a.link-chip:hover {
 }
 .profile-card .profile-avatar {
   margin-top: -66px;
+}
+
+/* ───────── Novedades de Steam ───────── */
+
+.news-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.news-item {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 14px;
+  padding: 10px;
+  margin: 0 -10px;
+  border-radius: var(--radius-panel);
+  color: var(--text);
+  text-decoration: none;
+}
+.news-item:hover {
+  background: var(--hover);
+}
+.news-image {
+  width: 112px;
+  height: 64px;
+  border-radius: 10px;
+  background: var(--raised);
+  object-fit: cover;
+}
+.news-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.news-title {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.news-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-small);
+}
+.news-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13px;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.week-level {
+  display: grid;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+.week-level-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.level-bar {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--raised);
+}
+.level-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+}
+.account-level {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  font-weight: 700;
+}
+
+/* ───────── Ficha de juego ───────── */
+
+.game-page {
+  display: grid;
+  gap: 24px;
+}
+.game-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 460px;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--surface);
+}
+.game-back {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  color: var(--text);
+  font-size: 14px;
+  text-decoration: none;
+}
+.game-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.game-chips .pill {
+  background: var(--ground);
+}
+.game-chips .game-chip-light {
+  background: var(--text);
+  color: var(--ground);
+}
+.game-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.game-tabs .tab {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.game-tabs .tab[aria-current='page'] {
+  background: var(--text);
+}
+.game-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--border);
+}
+.game-stats > div {
+  display: grid;
+  gap: 6px;
+  padding: 20px 24px;
+  background: var(--surface);
+}
+.game-stats .muted {
+  font-size: var(--fs-small);
+}
+.game-stats .mono {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+.game-accent {
+  color: var(--accent);
+}
+.game-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--gap);
+  align-items: start;
+}
+.game-sub {
+  margin: 8px 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.game-more {
+  margin-top: 12px;
+}
+.game-friends {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.game-friends li {
+  display: grid;
+  grid-template-columns: 36px minmax(80px, 140px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.game-friend-name {
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-decoration: none;
+}
+.level-bar[data-muted] > span {
+  background: var(--faint);
+}
+
+@media (max-width: 1100px) {
+  .game-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .game-hero {
+    min-height: 360px;
+    border-radius: var(--radius-card);
+  }
+  .game-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .game-stats .mono {
+    font-size: 24px;
+  }
 }

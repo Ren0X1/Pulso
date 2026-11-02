@@ -7,7 +7,7 @@ import { useLive, userTopic } from '../lib/live.ts'
 import { supabase } from '../lib/supabase.ts'
 import { countIncoming } from '../lib/friends.ts'
 import { isDesktop } from '../lib/platform.ts'
-import { launchGame } from '../lib/desktop.ts'
+import { launchGame, steamAppId } from '../lib/desktop.ts'
 import {
   countUnplayed,
   loadHero,
@@ -24,6 +24,9 @@ import { Cover } from './Cover.tsx'
 import { SyncSteam } from './SyncSteam.tsx'
 import { FriendsFeed } from './FriendsFeed.tsx'
 import { DownloadLauncher } from '../layout/DownloadLauncher.tsx'
+import { levelFor, loadPulsoMinutes } from '../lib/level.ts'
+import { loadNews, type NewsItem } from '../lib/news.ts'
+import { NewsList } from './NewsList.tsx'
 
 interface SteamAccount {
   external_user_id: string
@@ -40,7 +43,7 @@ function Pinned({ games }: { games: HomeEntry[] }) {
     <section className="pinned" aria-label="Fijados">
       <span className="pinned-label">Fijados</span>
       {games.map((g) => (
-        <Link key={g.game_id} to={`/biblioteca?q=${encodeURIComponent(g.game.name)}`} className="pinned-chip">
+        <Link key={g.game_id} to={`/juego/${g.game_id}`} className="pinned-chip">
           <Cover game={g.game} small />
           <span>{g.game.name}</span>
         </Link>
@@ -91,7 +94,7 @@ function Hero({ hero }: { hero: HeroGame }) {
         <div className="hero-row">
           <div className="hero-actions">
             <PlayButton appid={appid} />
-            <Link className="p-button" data-variant="ghost" to={`/biblioteca?q=${encodeURIComponent(entry.game.name)}`}>
+            <Link className="p-button" data-variant="ghost" to={`/juego/${entry.game_id}`}>
               Ficha del juego
             </Link>
           </div>
@@ -119,7 +122,7 @@ function Hero({ hero }: { hero: HeroGame }) {
   )
 }
 
-function Week({ days }: { days: WeekDay[] | null }) {
+function Week({ days, pulsoMinutes }: { days: WeekDay[] | null; pulsoMinutes: number | null }) {
   const total = days?.reduce((sum, d) => sum + d.minutes, 0) ?? 0
   const max = Math.max(60, ...(days ?? []).map((d) => d.minutes))
   return (
@@ -151,7 +154,28 @@ function Week({ days }: { days: WeekDay[] | null }) {
           )}
         </>
       )}
+      {pulsoMinutes !== null && <Level minutes={pulsoMinutes} />}
     </section>
+  )
+}
+
+/** Nivel Pulso: sube con las horas jugadas desde el launcher. */
+function Level({ minutes }: { minutes: number }) {
+  const { level, progress, hoursToNext } = levelFor(minutes)
+  return (
+    <div className="week-level">
+      <div className="week-level-row">
+        <span>
+          Nivel Pulso <span className="mono">{level}</span>
+        </span>
+        <span className="muted">
+          {hoursToNext} h para el {level + 1}
+        </span>
+      </div>
+      <div className="level-bar" role="progressbar" aria-label="Progreso al siguiente nivel" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
+        <span style={{ width: `${Math.round(progress * 100)}%` }} />
+      </div>
+    </div>
   )
 }
 
@@ -172,7 +196,7 @@ function Shelf({ games, unplayed }: { games: HomeEntry[] | null; unplayed: numbe
         <ul className="shelf-row">
           {games.map((g) => (
             <li key={g.game_id} className="shelf-item">
-              <Link to={`/biblioteca?q=${encodeURIComponent(g.game.name)}`} className="shelf-link">
+              <Link to={`/juego/${g.game_id}`} className="shelf-link">
                 <Cover game={g.game} />
                 <span className="shelf-name">{g.game.name}</span>
                 <span className="shelf-meta mono">{shortHours(g.playtime_minutes ?? 0)}</span>
@@ -203,16 +227,23 @@ export function Home() {
   const [week, setWeek] = useState<WeekDay[] | null>(null)
   const [unplayed, setUnplayed] = useState(0)
   const [incoming, setIncoming] = useState(0)
+  const [pulsoMinutes, setPulsoMinutes] = useState<number | null>(null)
+  const [news, setNews] = useState<NewsItem[] | null>(null)
 
   const load = useCallback(async () => {
     if (!supabase || !me) return
-    const [recentGames, pinnedGames, weekDays, notPlayed, account] = await Promise.all([
+    const [recentGames, pinnedGames, weekDays, notPlayed, account, minutes] = await Promise.all([
       loadRecent(me),
       loadPinned(me),
       loadWeek(me),
       countUnplayed(me),
       supabase.from('linked_accounts').select('external_user_id, display_name, avatar_url, profile_visibility').eq('platform', 'steam').maybeSingle(),
+      loadPulsoMinutes(me),
     ])
+    setPulsoMinutes(minutes)
+    // Las novedades salen de los juegos a los que juegas últimamente.
+    const appids = recentGames.map((g) => steamAppId(g.game.external)).filter((a): a is number => a !== null)
+    void loadNews(appids.slice(0, 8), 4).then(setNews)
     setRecent(recentGames)
     setPinned(pinnedGames)
     setWeek(weekDays)
@@ -245,7 +276,7 @@ export function Home() {
             </div>
           </section>
         )}
-        <Week days={week} />
+        <Week days={week} pulsoMinutes={pulsoMinutes} />
       </div>
 
       {incoming > 0 && (
@@ -259,6 +290,13 @@ export function Home() {
       <div className="home-columns">
         {me && <FriendsFeed me={me} limit={6} />}
 
+        <section className="panel" aria-label="Novedades de tus juegos">
+          <h2 className="panel-title">Novedades de tus juegos</h2>
+          <NewsList news={news} names={new Map((recent ?? []).map((g) => [steamAppId(g.game.external) ?? -1, g.game.name]))} />
+        </section>
+      </div>
+
+      <div className="home-columns">
         <section className="panel" aria-label="Tu cuenta de Steam">
           <h2 className="panel-title">Tu cuenta de Steam</h2>
           {account === undefined ? (
