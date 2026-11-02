@@ -59,7 +59,7 @@ Clave de Steam Web API gratis: https://steamcommunity.com/dev/apikey
 - **Login solo con Steam** (OpenID verificado en `auth-steam`). Email sintético `<steamid64>@steam.pulso.invalid`.
 - Secretos solo en Edge Functions. Nunca tokens ni datos personales en logs.
 - **Nada de datos inventados**: si algo no existe aún, la pantalla lo dice (estado vacío honesto).
-- Diseño *true-black flat*: suelo `#000`, elevación por luminosidad, sin bordes ni sombras en reposo. El lima `--accent` solo en datos, nunca en botones, pestañas ni nav. Botón principal = blanco invertido.
+- Diseño **Escaparate** (propuesta elegida en el lienzo "Pulso: rediseño radical"): suelo tinta `#0b0b10`, superficies por luminosidad, sin bordes ni sombras en reposo; barra superior con pestañas en píldora (sin menú lateral); el arte de los juegos pone el color. Tipos: Bricolage Grotesque (titulares), Inter (texto), JetBrains Mono (cifras, clase `.mono`). El lima `--accent` solo en datos, nunca en botones, pestañas ni nav. Botón principal = blanco invertido; la pestaña activa también.
 - Interfaz en español; README en inglés; commits `tipo(ámbito): texto en español`.
 
 ## Launcher (apps/desktop)

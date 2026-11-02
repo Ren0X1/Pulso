@@ -1,24 +1,27 @@
-/* Pulso · sistema de diseño
-   Estilo "true-black flat": suelo negro puro, elevación solo por luminosidad, sin bordes ni sombras
-   en reposo. El único color es el lima del pulso, y va en los datos, nunca en botones, pestañas ni nav. */
+/* Pulso · sistema de diseño "Escaparate"
+   Suelo tinta casi negro, superficies por luminosidad, sin bordes ni sombras en reposo. El arte de los juegos
+   pone el color; el lima del pulso va solo en los datos (cifras, progreso), nunca en botones ni navegación.
+   Tipos: Bricolage Grotesque para titulares, Inter para el texto, JetBrains Mono para las cifras. */
 
 @import '@fontsource-variable/inter';
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/jetbrains-mono';
 
 :root {
   color-scheme: dark;
 
-  --ground: #000000;
-  --surface: #111111;
-  --raised: #2a2a2a;
-  --hover: #1a1a1a;
-  --border: #1a1a1a;
-  --rule: #161616;
-  --control: #444444;
+  --ground: #0b0b10;
+  --surface: #111117;
+  --raised: #24242e;
+  --hover: #17171f;
+  --border: #22222b;
+  --rule: #1c1c24;
+  --control: #3a3a46;
 
-  --text: #ffffff;
-  --nav: #bbbbbb;
-  --muted: #b4b4b4;
-  --faint: #949494;
+  --text: #f4f1ea;
+  --nav: #c9c5bd;
+  --muted: #a9a59d;
+  --faint: #8f8b84;
 
   --accent: #c6f24e;
   --positive: #c6f24e;
@@ -31,26 +34,28 @@
   --pill-negative-ink: #e5566f;
   --pill-warning-bg: #2b2414;
   --pill-warning-ink: #e5a93b;
-  --pill-neutral-bg: #222222;
-  --pill-neutral-ink: #ffffff;
+  --pill-neutral-bg: #24242e;
+  --pill-neutral-ink: #f4f1ea;
 
-  --radius-card: 20px;
-  --radius-panel: 12px;
-  --radius-cover: 6px;
+  --radius-card: 24px;
+  --radius-panel: 16px;
+  --radius-cover: 12px;
   --radius-control: 999px;
 
   --sidebar-width: 220px;
-  --topbar-height: 64px;
+  --topbar-height: 76px;
   --nav-row: 34px;
-  --control-height: 36px;
-  --gap: 14px;
-  --pad: 22px;
-  --gutter: 29px;
+  --control-height: 40px;
+  --gap: 20px;
+  --pad: 24px;
+  --gutter: 48px;
 
   --font: 'Inter Variable', 'Inter', system-ui, sans-serif;
-  --fs-title: 20px;
-  --fs-section: 16px;
-  --fs-kpi: 24px;
+  --font-display: 'Bricolage Grotesque Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --fs-title: 28px;
+  --fs-section: 20px;
+  --fs-kpi: 32px;
   --fs-body: 14px;
   --fs-small: 12px;
 
@@ -78,6 +83,18 @@ h2,
 h3,
 p {
   margin: 0;
+}
+
+/* Titulares con la tipografía de marca; las cifras grandes, en monoespaciada. */
+h1,
+h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 a {
@@ -216,8 +233,9 @@ a {
   align-items: center;
   gap: 8px;
   color: var(--text);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 .p-logo svg {
   flex: none;
