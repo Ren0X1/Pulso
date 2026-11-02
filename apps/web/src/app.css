@@ -32,6 +32,9 @@
 .tabs::-webkit-scrollbar {
   display: none;
 }
+.topbar .tabs {
+  border-bottom: 0;
+}
 .tab {
   display: inline-flex;
   align-items: center;

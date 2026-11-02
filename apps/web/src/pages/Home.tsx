@@ -223,7 +223,8 @@ export function Home() {
   const [account, setAccount] = useState<SteamAccount | null | undefined>(undefined)
   const [recent, setRecent] = useState<HomeEntry[] | null>(null)
   const [pinned, setPinned] = useState<HomeEntry[]>([])
-  const [hero, setHero] = useState<HeroGame | null>(null)
+  // undefined mientras carga: así no se ve el mensaje de cuenta vacía durante un instante.
+  const [hero, setHero] = useState<HeroGame | null | undefined>(undefined)
   const [week, setWeek] = useState<WeekDay[] | null>(null)
   const [unplayed, setUnplayed] = useState(0)
   const [incoming, setIncoming] = useState(0)
@@ -259,14 +260,16 @@ export function Home() {
   useLive([me && userTopic(me)], () => countIncoming(me).then(setIncoming))
 
   const isPrivate = account?.profile_visibility === 'private'
-  const shelf = recent?.slice(hero ? 1 : 0, 8) ?? null
+  const shelf = hero === undefined ? null : (recent?.slice(hero ? 1 : 0, 8) ?? null)
 
   return (
     <div className="home">
       {pinned.length > 0 && <Pinned games={pinned} />}
 
       <div className="home-top">
-        {hero ? (
+        {hero === undefined ? (
+          <section className="hero" aria-label="Cargando" aria-busy="true" />
+        ) : hero ? (
           <Hero hero={hero} />
         ) : (
           <section className="hero hero-empty" aria-label="Empieza">
