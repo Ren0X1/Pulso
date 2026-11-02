@@ -59,7 +59,8 @@ export function nextAchievementBatch(
   since: Date,
   limit = ACHIEVEMENT_BATCH,
 ): { batch: OwnedGame[]; total: number; remaining: number } {
-  const withStats = owned.filter((g) => g.has_community_visible_stats)
+  // Todos: has_community_visible_stats falta en algunos juegos que sí tienen logros.
+  const withStats = owned
   const pending = withStats.filter((g) => {
     const at = syncedAt.get(g.appid)
     return !at || at < since
@@ -103,11 +104,12 @@ export function pickAchievementGames(
   limit = ACHIEVEMENT_GAMES_PER_SYNC,
 ): OwnedGame[] {
   const rank = (g: OwnedGame) => {
+    // Los que Steam no marca con logros casi nunca los tienen: al final de la cola.
+    if (!g.has_community_visible_stats) return 3
     if ((g.playtime_2weeks ?? 0) > 0) return 0
     return syncedAt.get(g.appid) ? 2 : 1
   }
-  return owned
-    .filter((g) => g.has_community_visible_stats)
+  return [...owned]
     .sort((a, b) => {
       const byRank = rank(a) - rank(b)
       if (byRank) return byRank

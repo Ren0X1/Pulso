@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatAgo, isStalled, rarityLabel, syncErrorMessage, syncProgressText, syncSummaryText } from './steam.ts'
+import { formatAgo, isStalled, rarityLabel, shouldAutoSync, syncErrorMessage, syncProgressText, syncSummaryText } from './steam.ts'
 
 describe('progreso de la sincronización', () => {
   it('primero la biblioteca, luego los logros juego a juego', () => {
@@ -51,6 +51,16 @@ describe('syncErrorMessage', () => {
     expect(syncErrorMessage({ error: 'games_private' })).toMatch(/Detalles de juego/)
     expect(syncErrorMessage({ error: 'cooldown', retry_after: 420 })).toBe('Ya sincronizaste hace poco. Vuelve a intentarlo en 7 min.')
     expect(syncErrorMessage({ error: 'cosa_rara' })).toMatch(/No se pudo sincronizar/)
+  })
+})
+
+describe('shouldAutoSync', () => {
+  const now = new Date('2026-11-02T12:00:00Z')
+  it('sincroniza sola al abrir si nunca se ha hecho o la última tiene más de 6 h', () => {
+    expect(shouldAutoSync(null, now)).toBe(true)
+    expect(shouldAutoSync({ status: 'ok', started_at: '2026-11-02T05:00:00Z' }, now)).toBe(true)
+    expect(shouldAutoSync({ status: 'ok', started_at: '2026-11-02T09:00:00Z' }, now)).toBe(false)
+    expect(shouldAutoSync({ status: 'running', started_at: '2026-11-01T09:00:00Z' }, now)).toBe(false)
   })
 })
 

@@ -87,6 +87,16 @@ export function hiddenText(count: number): string {
     : `${count} juegos con los logros ocultos en Steam (privados en tu biblioteca o ya no son tuyos)`
 }
 
+/** Al abrir Pulso se sincroniza solo si la última sincronización tiene más de estas horas. */
+export const AUTO_SYNC_HOURS = 6
+
+/** Si toca sincronizar sola al abrir: nunca se ha hecho, o la última (bien o mal) es de hace más de 6 h. */
+export function shouldAutoSync(last: Pick<SyncRun, 'status' | 'started_at'> | null, now = new Date()): boolean {
+  if (!last) return true
+  if (last.status === 'running') return false
+  return now.getTime() - new Date(last.started_at).getTime() >= AUTO_SYNC_HOURS * 3_600_000
+}
+
 export const SYNC_RUN_FIELDS = 'id, status, error, started_at, finished_at, updated_at, games, added, total, checked, unlocked, hidden_games, forced_by'
 
 export async function loadLastSync(): Promise<SyncRun | null> {

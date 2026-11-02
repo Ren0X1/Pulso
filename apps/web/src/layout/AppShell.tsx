@@ -7,6 +7,7 @@ import { useLive, userTopic } from '../lib/live.ts'
 import { countIncoming } from '../lib/friends.ts'
 import { countUnread } from '../lib/social.ts'
 import { isAdmin } from '../lib/admin.ts'
+import { loadLastSync, shouldAutoSync, startSync } from '../lib/steam.ts'
 import { isDesktop } from '../lib/platform.ts'
 import { NowPlaying } from './NowPlaying.tsx'
 import { DownloadLauncher } from './DownloadLauncher.tsx'
@@ -65,6 +66,14 @@ export function AppShell() {
 
   useEffect(() => {
     if (me) void isAdmin(me).then(setAdmin, () => setAdmin(false))
+  }, [me])
+
+  // Al abrir Pulso, la biblioteca y los logros se ponen al día solos (sigue en el servidor aunque se cierre).
+  useEffect(() => {
+    if (!me) return
+    void loadLastSync().then((last) => {
+      if (shouldAutoSync(last)) void startSync()
+    }, () => {})
   }, [me])
 
   const recount = useCallback(async () => {

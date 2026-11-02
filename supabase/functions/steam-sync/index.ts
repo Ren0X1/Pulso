@@ -102,7 +102,7 @@ async function importGames(admin: SupabaseClient, userId: string, owned: OwnedGa
   for (const part of chunk(missing, 200)) {
     const { data, error } = await admin
       .from('games')
-      .upsert(part.map((g) => ({ slug: `steam-${g.appid}`, name: g.name, cover_url: steamCoverUrl(g.appid) })), { onConflict: 'slug' })
+      .upsert(part.map((g) => ({ slug: `steam-${g.appid}`, name: g.name || `Juego de Steam ${g.appid}`, cover_url: steamCoverUrl(g.appid) })), { onConflict: 'slug' })
       .select('id, slug')
     if (error) throw new Error(`games: ${error.code}`)
     for (const row of data) gameIdByApp.set(Number(row.slug.slice('steam-'.length)), row.id)
@@ -258,8 +258,9 @@ async function runBatch(admin: SupabaseClient, run: RunRow, first: boolean) {
     if (!visible) throw new SyncError('profile_private')
   }
 
+  // Con los gratuitos y los retirados de la tienda: Steam los esconde por defecto y también tienen logros.
   const parsed = parseOwnedGames(
-    await steam('IPlayerService/GetOwnedGames/v1/', { steamid: steamId, include_appinfo: 1, include_played_free_games: 1 }),
+    await steam('IPlayerService/GetOwnedGames/v1/', { steamid: steamId, include_appinfo: 1, include_played_free_games: 1, include_free_sub: 1, skip_unvetted_apps: 0 }),
   )
   if (!parsed.ok) throw new SyncError(parsed.error)
 

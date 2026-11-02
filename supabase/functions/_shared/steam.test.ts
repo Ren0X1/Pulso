@@ -79,7 +79,7 @@ describe('initialStatus', () => {
 })
 
 describe('pickAchievementGames', () => {
-  it('solo juegos con logros; primero los recientes, luego los nunca sincronizados, luego por horas', () => {
+  it('primero los recientes, luego los nunca sincronizados, luego por horas; los que Steam no marca con logros, al final', () => {
     const owned = [
       game(1, { playtime_forever: 9000 }),
       game(2, { playtime_forever: 10, playtime_2weeks: 10 }),
@@ -88,7 +88,7 @@ describe('pickAchievementGames', () => {
       game(5, { playtime_forever: 20000 }),
     ]
     const synced = new Map([[5, new Date('2026-10-20T00:00:00Z')]])
-    expect(pickAchievementGames(owned, synced, 10).map((g) => g.appid)).toEqual([2, 1, 3, 5])
+    expect(pickAchievementGames(owned, synced, 10).map((g) => g.appid)).toEqual([2, 1, 3, 5, 4])
   })
 
   it('respeta el límite', () => {
@@ -172,7 +172,7 @@ describe('becamePlatinum', () => {
 describe('nextAchievementBatch', () => {
   const START = new Date('2026-10-29T10:00:00Z')
 
-  it('una sincronización acaba revisando todos los juegos con logros, tanda a tanda', () => {
+  it('una sincronización acaba revisando todos los juegos, tanda a tanda', () => {
     const owned = [...Array.from({ length: 70 }, (_, i) => game(i + 1)), game(999, { has_community_visible_stats: false })]
     const synced = new Map<number, Date | null>()
     const seen = new Set<number>()
@@ -180,15 +180,16 @@ describe('nextAchievementBatch', () => {
     for (let calls = 0; remaining > 0; calls++) {
       expect(calls).toBeLessThan(10)
       const next = nextAchievementBatch(owned, synced, START, 30)
-      expect(next.total).toBe(70)
+      expect(next.total).toBe(71)
       for (const g of next.batch) {
         seen.add(g.appid)
         synced.set(g.appid, new Date(START.getTime() + 60_000))
       }
       remaining = next.remaining
     }
-    expect(seen.size).toBe(70)
-    expect(seen.has(999)).toBe(false) // sin logros en Steam: no hay nada que revisar
+    expect(seen.size).toBe(71)
+    // Steam no lo marca con logros, pero a veces los tiene: también se revisa.
+    expect(seen.has(999)).toBe(true)
   })
 
   it('los revisados antes de empezar esta sincronización se vuelven a revisar', () => {
