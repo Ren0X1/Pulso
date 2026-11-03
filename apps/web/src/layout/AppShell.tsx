@@ -106,7 +106,7 @@ export function AppShell() {
         <NavLink to="/" className="topbar-logo" aria-label="Pulso, inicio">
           <Logo size={26} />
         </NavLink>
-        <nav className="tabs" aria-label="Navegación principal">
+        <nav className="nav-tabs" aria-label="Navegación principal">
           {MAIN.map((item) => (
             <Tab key={item.to} item={item.to === '/amigos' ? { ...item, count: incoming } : item} />
           ))}

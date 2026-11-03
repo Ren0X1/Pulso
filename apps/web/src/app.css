@@ -24,7 +24,7 @@
   align-items: center;
   text-decoration: none;
 }
-.tabs {
+.nav-tabs {
   grid-area: tabs;
   display: flex;
   gap: 4px;
@@ -36,11 +36,8 @@
 .tab {
   scroll-snap-align: start;
 }
-.tabs::-webkit-scrollbar {
+.nav-tabs::-webkit-scrollbar {
   display: none;
-}
-.topbar .tabs {
-  border-bottom: 0;
 }
 .tab {
   display: inline-flex;
@@ -383,7 +380,7 @@ a.p-button {
     min-height: 60px;
     padding: 0 16px;
   }
-  .tabs {
+  .nav-tabs {
     display: none;
   }
   /* Ajustes, administración y cerrar sesión están en "Más", en la barra inferior. */
@@ -1719,8 +1716,10 @@ a.link-chip:hover {
   text-align: center;
 }
 /* Filas de portadas (favoritos, últimos juegos): mismo tamaño que la biblioteca, no a todo lo ancho. */
-.cover-grid-row {
-  grid-template-columns: repeat(6, minmax(0, 170px));
+@media (min-width: 761px) {
+  .cover-grid-row {
+    grid-template-columns: repeat(6, minmax(0, 170px));
+  }
 }
 
 /* Sincronización con Steam: notas debajo del botón. */
@@ -2435,5 +2434,8 @@ a.link-chip:hover {
   }
   .panel {
     padding: 18px;
+  }
+  .panel.profile-card {
+    padding: 0;
   }
 }
