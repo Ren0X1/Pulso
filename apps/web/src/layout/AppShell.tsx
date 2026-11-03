@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useMatches } from 'react-router'
-import { Activity, Bell, ChartColumn, House, Library, ListChecks, LogOut, Settings, ShieldCheck, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
+import { Activity, Bell, ChartColumn, House, Library, ListChecks, LogOut, Menu, Settings, ShieldCheck, Trophy, UserRound, Users, type LucideIcon } from 'lucide-react'
 import { Avatar, Logo } from '@pulso/ui'
 import { useAuth } from '../lib/auth.tsx'
 import { useLive, userTopic } from '../lib/live.ts'
@@ -87,12 +87,22 @@ export function AppShell() {
   }, [recount, location.pathname])
   useLive([me && userTopic(me)], recount)
 
+  // Móvil: la barra inferior lleva las secciones principales y "Más" abre el resto.
+  const [more, setMore] = useState(false)
+  useEffect(() => setMore(false), [location.pathname])
+  const moreItems: NavItem[] = [
+    { to: profilePath, label: 'Tu perfil', icon: UserRound },
+    ...MAIN.filter((i) => !i.phone),
+    { to: '/ajustes', label: 'Ajustes', icon: Settings },
+    ...(admin ? [{ to: '/admin', label: 'Administración', icon: ShieldCheck }] : []),
+  ]
+
   // Inicio, la ficha de un juego y los perfiles no llevan título: su cabecera ya dice qué es.
   const ownHeader = location.pathname === '/' || /^\/(juego|u)\//.test(location.pathname)
 
   return (
     <div className="shell">
-      <header className="topbar">
+      <header className="topbar" data-desktop={desktop || undefined}>
         <NavLink to="/" className="topbar-logo" aria-label="Pulso, inicio">
           <Logo size={26} />
         </NavLink>
@@ -109,11 +119,11 @@ export function AppShell() {
               {unread > 0 && <span className="bell-count num">{unread}</span>}
             </NavLink>
             {admin && (
-              <NavLink to="/admin" className="icon-button" aria-label="Administración">
+              <NavLink to="/admin" className="icon-button topbar-extra" aria-label="Administración">
                 <ShieldCheck size={18} strokeWidth={1.75} aria-hidden="true" />
               </NavLink>
             )}
-            <NavLink to="/ajustes" className="icon-button" aria-label="Ajustes">
+            <NavLink to="/ajustes" className="icon-button topbar-extra" aria-label="Ajustes">
               <Settings size={18} strokeWidth={1.75} aria-hidden="true" />
             </NavLink>
             <NavLink to={profilePath} className="account-link">
@@ -121,7 +131,7 @@ export function AppShell() {
               <span className="account-name">{profile.username}</span>
               {level !== null && <span className="account-level" title="Nivel Pulso: sube con las horas jugadas desde el launcher">Nv {level}</span>}
             </NavLink>
-            <button type="button" className="icon-button" onClick={() => void signOut()} aria-label="Cerrar sesión">
+            <button type="button" className="icon-button topbar-extra" onClick={() => void signOut()} aria-label="Cerrar sesión">
               <LogOut size={18} strokeWidth={1.75} aria-hidden="true" />
             </button>
           </div>
@@ -138,16 +148,42 @@ export function AppShell() {
         <Outlet />
       </main>
 
+      {more && (
+        <>
+          <button type="button" className="phone-sheet-backdrop" aria-label="Cerrar el menú" onClick={() => setMore(false)} />
+          <nav className="phone-sheet" id="phone-more" aria-label="Más secciones">
+            {moreItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <NavLink key={item.to} to={item.to} className="phone-sheet-item">
+                  <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
+                  <span>{item.label}</span>
+                </NavLink>
+              )
+            })}
+            <button type="button" className="phone-sheet-item" onClick={() => void signOut()}>
+              <LogOut size={20} strokeWidth={1.5} aria-hidden="true" />
+              <span>Cerrar sesión</span>
+            </button>
+          </nav>
+        </>
+      )}
+
       <nav className="phone-nav" aria-label="Navegación">
-        {[...MAIN.filter((i) => i.phone), { to: profilePath, label: 'Perfil', icon: UserRound }].map((item) => {
+        {MAIN.filter((i) => i.phone).map((item) => {
           const Icon = item.icon
           return (
             <NavLink key={item.label} to={item.to} end={item.to === '/'} className="phone-nav-item">
               <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
               <span>{item.label}</span>
+              {item.to === '/amigos' && incoming > 0 && <span className="phone-nav-count num">{incoming}</span>}
             </NavLink>
           )
         })}
+        <button type="button" className="phone-nav-item" aria-expanded={more} aria-controls="phone-more" onClick={() => setMore((m) => !m)}>
+          <Menu size={20} strokeWidth={1.5} aria-hidden="true" />
+          <span>Más</span>
+        </button>
       </nav>
     </div>
   )

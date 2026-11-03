@@ -9,25 +9,32 @@
   position: sticky;
   top: 0;
   z-index: 3;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'logo tabs account';
   align-items: center;
-  gap: 32px;
-  height: var(--topbar-height);
+  column-gap: 32px;
+  min-height: var(--topbar-height);
   padding: 0 var(--gutter);
   background: var(--ground);
 }
 .topbar-logo {
+  grid-area: logo;
   display: flex;
   align-items: center;
-  flex: none;
   text-decoration: none;
 }
 .tabs {
+  grid-area: tabs;
   display: flex;
   gap: 4px;
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+.tab {
+  scroll-snap-align: start;
 }
 .tabs::-webkit-scrollbar {
   display: none;
@@ -71,11 +78,43 @@
   background: var(--ground);
 }
 .topbar-account {
+  grid-area: account;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
-  margin-left: auto;
-  flex: none;
+  min-width: 0;
+}
+.topbar-account .now-playing {
+  min-width: 0;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Cuando no cabe todo en una fila (ventanas estrechas, el launcher con su juego en curso), las pestañas bajan
+   a una segunda fila a lo ancho y siempre se ven todas. */
+@media (max-width: 1320px) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'logo account'
+      'tabs tabs';
+    row-gap: 6px;
+    padding-top: 12px;
+    padding-bottom: 10px;
+  }
+}
+@media (max-width: 1640px) {
+  .topbar[data-desktop] {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'logo account'
+      'tabs tabs';
+    row-gap: 6px;
+    padding-top: 12px;
+    padding-bottom: 10px;
+  }
 }
 .account-link {
   display: flex;
@@ -121,16 +160,16 @@
   line-height: 1.1;
 }
 
-.phone-nav {
+.phone-nav,
+.phone-sheet,
+.phone-sheet-backdrop {
   display: none;
 }
 
-@media (max-width: 1180px) {
-  .account-name {
+@media (max-width: 760px) {
+  .account-name,
+  .account-level {
     display: none;
-  }
-  .account-link {
-    padding-right: 4px;
   }
 }
 
@@ -337,20 +376,26 @@ a.p-button {
 /* ───────── Móvil ───────── */
 
 @media (max-width: 760px) {
-  .topbar {
-    gap: 12px;
-    height: 60px;
+  .topbar,
+  .topbar[data-desktop] {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'logo account';
+    min-height: 60px;
     padding: 0 16px;
   }
   .tabs {
     display: none;
   }
-  /* El perfil ya está en la barra inferior. */
-  .topbar-account .account-link {
+  /* Ajustes, administración y cerrar sesión están en "Más", en la barra inferior. */
+  .topbar-extra,
+  .topbar-account .now-playing {
     display: none;
   }
+  .account-link {
+    padding: 2px;
+  }
   .canvas {
-    padding: 8px 16px 96px;
+    padding: 8px 16px calc(96px + env(safe-area-inset-bottom));
   }
   .page-title {
     margin: 8px 0 16px;
@@ -367,13 +412,74 @@ a.p-button {
     background: var(--ground);
   }
   .phone-nav-item {
+    position: relative;
     display: grid;
     justify-items: center;
     gap: 2px;
     padding: 6px 0;
+    border: 0;
+    background: none;
     color: var(--nav);
+    font: inherit;
     font-size: 11px;
     text-decoration: none;
+    cursor: pointer;
+  }
+  .phone-nav-item[aria-expanded='true'] {
+    color: var(--text);
+  }
+  .phone-nav-count {
+    position: absolute;
+    top: 2px;
+    left: calc(50% + 6px);
+    min-width: 16px;
+    padding: 0 4px;
+    border-radius: 99px;
+    background: var(--text);
+    color: var(--ground);
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+  }
+  .phone-sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    border: 0;
+    background: var(--ground);
+    opacity: 0.6;
+  }
+  .phone-sheet {
+    position: fixed;
+    inset: auto 8px calc(72px + env(safe-area-inset-bottom));
+    z-index: 4;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 10px;
+    border-radius: var(--radius-card);
+    background: var(--hover);
+  }
+  .phone-sheet-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--radius-panel);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .phone-sheet-item[aria-current='page'] {
+    background: var(--text);
+    color: var(--ground);
   }
   .phone-nav-item[aria-current='page'] {
     color: var(--text);
@@ -1774,7 +1880,8 @@ a.link-chip:hover {
   font-size: 13px;
 }
 .hero-title {
-  font-size: clamp(44px, 6vw, 84px);
+  overflow-wrap: anywhere;
+  font-size: clamp(34px, 6vw, 84px);
   font-weight: 800;
   line-height: 0.92;
   letter-spacing: -0.04em;
@@ -2232,5 +2339,101 @@ a.link-chip:hover {
   }
   .game-stats .mono {
     font-size: 24px;
+  }
+}
+
+
+/* ───────── Móvil: Inicio y ficha de juego ───────── */
+
+@media (max-width: 760px) {
+  .home {
+    gap: 22px;
+  }
+  /* Fijados y "Continúa" se deslizan con el dedo en vez de apretarse en columnas. */
+  .pinned {
+    flex-wrap: nowrap;
+    margin: 0 -16px;
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .pinned-chip,
+  .pinned-add {
+    flex: none;
+  }
+  .shelf-row {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 38%;
+    margin: 0 -16px;
+    padding: 0 16px 4px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 16px;
+    scrollbar-width: none;
+  }
+  .shelf-item {
+    scroll-snap-align: start;
+  }
+  .hero {
+    min-height: 320px;
+  }
+  .hero-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .hero-actions {
+    flex-wrap: wrap;
+  }
+  .hero-actions .p-button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  .hero-stats {
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .hero-stats dd {
+    font-size: 18px;
+  }
+  .week-total {
+    font-size: 36px;
+  }
+  .week-bars {
+    min-height: 110px;
+  }
+  .section-title {
+    font-size: 20px;
+  }
+  .news-item {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .news-image {
+    width: 88px;
+    height: 52px;
+  }
+  .game-back {
+    top: 12px;
+    left: 12px;
+  }
+  .game-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .game-tabs .tab {
+    flex: none;
+  }
+  .game-stats > div {
+    padding: 16px;
+  }
+  .game-friends li {
+    grid-template-columns: 32px minmax(0, 1fr) 56px auto;
+    gap: 10px;
+  }
+  .panel {
+    padding: 18px;
   }
 }
